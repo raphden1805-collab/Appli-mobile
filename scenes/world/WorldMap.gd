@@ -10,19 +10,19 @@ extends Reference
 # Average island size and how wildly the coastline wobbles around it -
 # combined with COAST_VARIATION this produces real bays and peninsulas
 # instead of a perfect circle.
-const COAST_BASE_RADIUS := 150.0
-const COAST_VARIATION := 55.0
-const COAST_SAMPLE_RADIUS := 100.0
+const COAST_BASE_RADIUS := 270.0
+const COAST_VARIATION := 100.0
+const COAST_SAMPLE_RADIUS := 180.0
 const COAST_DETAIL_FREQ := 2.6
 
 # Sandy ring between the island and open water.
-const BEACH_WIDTH := 16.0
+const BEACH_WIDTH := 22.0
 # The detailed ground mesh extends a little past the widest possible
 # coastline so its edge is always hidden underwater regardless of angle.
 const GROUND_MESH_RADIUS := COAST_BASE_RADIUS + COAST_VARIATION + BEACH_WIDTH + 6.0
 # Big open-water plane so the horizon is never visible from the island
 # (fog hides everything past ~280 units anyway).
-const WATER_SIZE := 900.0
+const WATER_SIZE := 1600.0
 const WATER_LEVEL := -0.2
 # Slightly bigger than the ground mesh so the minimap shows a strip of
 # open water framing the island.
@@ -33,7 +33,7 @@ const MINIMAP_VIEW_RADIUS := GROUND_MESH_RADIUS * 1.15
 # desert/snow pocket.
 const SPAWN_SAFE_RADIUS := 20.0
 
-const NOISE_PERIOD := 90.0
+const NOISE_PERIOD := 162.0
 const NOISE_OCTAVES := 3
 const NOISE_PERSISTENCE := 0.5
 

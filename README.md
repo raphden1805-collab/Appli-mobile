@@ -22,7 +22,8 @@ Ce qui est jouable aujourd'hui :
   de glissement (visée caméra), boutons d'action (sauter, sprint,
   récolter/placer, interagir, construire) - en plus du clavier/souris
   pour tester depuis l'éditeur Godot
-- Monde de 360x360 avec biomes **générés aléatoirement** (bruit de
+- Monde d'environ 800x800 (agrandi nettement par rapport aux versions
+  précédentes) avec biomes **générés aléatoirement** (bruit de
   Perlin/Simplex, formes organiques) : désert, plaine, neige - la zone
   de spawn reste toujours en plaine quelle que soit la seed
 - **Île de forme vraiment aléatoire** : le littoral n'est pas un cercle
@@ -30,13 +31,23 @@ Ce qui est jouable aujourd'hui :
   forme à chaque seed, visible sur la minimap
 - Forêts denses regroupées dans les plaines (en plus d'arbres épars),
   cactus décoratifs dans le désert
-- Points d'intérêt placés aléatoirement selon le biome : 2 villages
-  désertiques (huttes + caisses), 2 immeubles abandonnés et 2 gares
-  abandonnées (wagon rouillé) dans les zones enneigées, tous lootables
+- Points d'intérêt placés aléatoirement selon le biome : 3 villages
+  désertiques (huttes + caisses), 3 immeubles abandonnés, 3 gares
+  abandonnées (wagon rouillé) dans les zones enneigées, et 2 **stations
+  de métro abandonnées** (aussi en zone enneigée) - un vrai escalier
+  descend depuis un kiosque de surface (auvent, piliers, panneau) dans
+  une fosse en béton scellée, puis fait basculer le joueur (touche
+  interagir, comme une caisse ou une porte) vers un quai souterrain
+  séparé avec rails, wagon rouillé, caisses et éclairage tamisé - et un
+  second escalier pour remonter ; le monde n'a pas de collision de
+  terrain "trouable", donc les deux moitiés sont reliées par téléportation
+  plutôt que par un vrai trou traversable, tous les autres points
+  d'intérêt sont lootables
 - Minimap en haut à droite : image générée à partir du même bruit que
   le monde réel (donc toujours exacte), icônes différentes par type de
   point d'intérêt (carré = village, cercle = immeuble, losange = gare,
-  cercle jaune = ruines de départ), boussole "N", flèche joueur
+  triangle turquoise = métro, cercle jaune = ruines de départ), boussole
+  "N", flèche joueur
 - Panneau d'inventaire dédié (touche I ou bouton "Sac") avec un slot par
   ressource, en plus du compteur rapide déjà affiché en haut à droite
 - Environnement amélioré : SSAO, glow, tonemapping filmique, anti-aliasing

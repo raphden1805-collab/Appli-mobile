@@ -75,6 +75,9 @@ func _draw_poi_marker(mp: Vector2, poi_type: String) -> void:
 		"station":
 			var pts := PoolVector2Array([mp + Vector2(0, -7), mp + Vector2(7, 0), mp + Vector2(0, 7), mp + Vector2(-7, 0)])
 			draw_colored_polygon(pts, Color(0.7, 0.4, 0.85, 0.95))
+		"metro":
+			var pts := PoolVector2Array([mp + Vector2(-7, -5), mp + Vector2(7, -5), mp + Vector2(0, 7)])
+			draw_colored_polygon(pts, Color(0.2, 0.75, 0.75, 0.95))
 		_:
 			draw_circle(mp, 6.0, Color(0, 0, 0, 0.6))
 			draw_circle(mp, 5.0, Color(1.0, 0.85, 0.2, 0.95))

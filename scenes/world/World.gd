@@ -23,25 +23,29 @@ const CRATE_SCENE := preload("res://scenes/world/LootCrate.tscn")
 const DESERT_VILLAGE_SCENE := preload("res://scenes/world/DesertVillage.tscn")
 const ABANDONED_BUILDING_SCENE := preload("res://scenes/world/AbandonedBuilding.tscn")
 const ABANDONED_STATION_SCENE := preload("res://scenes/world/AbandonedStation.tscn")
+const ABANDONED_METRO_SCENE := preload("res://scenes/world/AbandonedMetro.tscn")
 
-const GROUND_RESOLUTION := 96
-const WATER_RESOLUTION := 100
+const GROUND_RESOLUTION := 160
+const WATER_RESOLUTION := 130
 
-const VEGETATION_COUNT := 100
-const FOREST_CLUSTERS := 8
+const VEGETATION_COUNT := 220
+const FOREST_CLUSTERS := 14
 const TREES_PER_FOREST := 22
 const FOREST_RADIUS := 22.0
-const ROCK_COUNT := 150
-const ORE_COUNT := 50
-const CRATE_COUNT := 24
-const CACTUS_COUNT := 80
-const DESERT_VILLAGE_COUNT := 2
-const SNOW_BUILDING_COUNT := 2
-const SNOW_STATION_COUNT := 2
+const ROCK_COUNT := 300
+const ORE_COUNT := 100
+const CRATE_COUNT := 40
+const CACTUS_COUNT := 160
+const DESERT_VILLAGE_COUNT := 3
+const SNOW_BUILDING_COUNT := 3
+const SNOW_STATION_COUNT := 3
+const SNOW_METRO_COUNT := 2
 const MIN_SPAWN_DIST_FROM_CENTER := 8.0
 const MAX_PLACEMENT_ATTEMPTS := 250
-const GRASS_COUNT := 25000
+const GRASS_COUNT := 34000
 const GRASS_ATTEMPTS_PER_BLADE := 12
+const METRO_HOLE_RADIUS := 4.5
+const WATER_HOLE_RADIUS := 20.0
 
 onready var spawn_root: Spatial = $Spawns
 onready var ground: StaticBody = $Ground
@@ -55,8 +59,12 @@ func _ready() -> void:
 	coast_noise = WorldMap.create_coast_noise(GameManager.world_seed)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = GameManager.world_seed
-	_build_ground_mesh()
-	_build_water_mesh()
+	# Metro entrances need an actual hole in the ground mesh (unlike other
+	# POIs, which just sit on top of it), so their positions must be known
+	# before the ground is built rather than sampled afterwards.
+	var metro_positions := _plan_metro_positions(rng)
+	_build_ground_mesh(metro_positions)
+	_build_water_mesh(metro_positions)
 	_build_grass(rng)
 	_scatter_forests(rng)
 	_scatter_vegetation(rng)
@@ -64,11 +72,11 @@ func _ready() -> void:
 	_scatter(ORE_SCENE, ORE_COUNT, rng)
 	_scatter(CRATE_SCENE, CRATE_COUNT, rng)
 	_scatter_cacti(rng)
-	_place_pois(rng)
+	_place_pois(rng, metro_positions)
 
 # --- Ground -----------------------------------------------------------
 
-func _build_ground_mesh() -> void:
+func _build_ground_mesh(hole_positions: Array) -> void:
 	var half := WorldMap.GROUND_MESH_RADIUS
 	var step := (half * 2.0) / GROUND_RESOLUTION
 	var st := SurfaceTool.new()
@@ -79,6 +87,8 @@ func _build_ground_mesh() -> void:
 		for xi in range(GROUND_RESOLUTION):
 			var x0 := -half + xi * step
 			var x1 := x0 + step
+			if _in_any_hole(Vector2((x0 + x1) * 0.5, (z0 + z1) * 0.5), hole_positions, METRO_HOLE_RADIUS):
+				continue
 			var p00 := Vector3(x0, 0, z0)
 			var p10 := Vector3(x1, 0, z0)
 			var p01 := Vector3(x0, 0, z1)
@@ -109,6 +119,20 @@ func _build_ground_material() -> ShaderMaterial:
 	mat.set_shader_param("snow_normal", load("res://assets/textures/snow/NormalGL.jpg"))
 	mat.set_shader_param("snow_roughness", load("res://assets/textures/snow/Roughness.jpg"))
 	return mat
+
+func _in_any_hole(p: Vector2, hole_positions: Array, radius: float) -> bool:
+	for hp in hole_positions:
+		if p.distance_to(hp) < radius:
+			return true
+	return false
+
+func _add_water_tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
+	st.add_normal(Vector3.UP)
+	st.add_vertex(a)
+	st.add_normal(Vector3.UP)
+	st.add_vertex(b)
+	st.add_normal(Vector3.UP)
+	st.add_vertex(c)
 
 func _add_tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, wa: Vector3, wb: Vector3, wc: Vector3) -> void:
 	_add_vertex(st, a, wa)
@@ -178,13 +202,33 @@ func _build_grass_blade_mesh() -> ArrayMesh:
 
 # --- Water --------------------------------------------------------------
 
-func _build_water_mesh() -> void:
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(WorldMap.WATER_SIZE, WorldMap.WATER_SIZE)
-	plane.subdivide_width = WATER_RESOLUTION
-	plane.subdivide_depth = WATER_RESOLUTION
+func _build_water_mesh(hole_positions: Array) -> void:
+	# A plain PlaneMesh can't have holes, and the ocean sits at
+	# WATER_LEVEL=-0.2 - just below ground level but well above the metro
+	# stairwells (which descend past y=-2) - so without a matching hole
+	# here the water would mask every stairwell from above. Built as a
+	# hand-tessellated grid (like the ground) so those quads can be
+	# skipped the same way.
+	var half := WorldMap.WATER_SIZE * 0.5
+	var step := (half * 2.0) / WATER_RESOLUTION
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for zi in range(WATER_RESOLUTION):
+		var z0 := -half + zi * step
+		var z1 := z0 + step
+		for xi in range(WATER_RESOLUTION):
+			var x0 := -half + xi * step
+			var x1 := x0 + step
+			if _in_any_hole(Vector2((x0 + x1) * 0.5, (z0 + z1) * 0.5), hole_positions, WATER_HOLE_RADIUS):
+				continue
+			var p00 := Vector3(x0, 0, z0)
+			var p10 := Vector3(x1, 0, z0)
+			var p01 := Vector3(x0, 0, z1)
+			var p11 := Vector3(x1, 0, z1)
+			_add_water_tri(st, p00, p10, p11)
+			_add_water_tri(st, p00, p11, p01)
 	var mesh_instance := MeshInstance.new()
-	mesh_instance.mesh = plane
+	mesh_instance.mesh = st.commit()
 	mesh_instance.transform.origin = Vector3(0, WorldMap.WATER_LEVEL, 0)
 	var mat := ShaderMaterial.new()
 	mat.shader = WATER_SHADER
@@ -241,13 +285,15 @@ func _scatter(scene: PackedScene, count: int, rng: RandomNumberGenerator) -> voi
 
 # --- Points of interest --------------------------------------------------
 
-func _place_pois(rng: RandomNumberGenerator) -> void:
+func _place_pois(rng: RandomNumberGenerator, metro_positions: Array) -> void:
 	for i in range(DESERT_VILLAGE_COUNT):
 		_place_poi(DESERT_VILLAGE_SCENE, WorldMap.BIOME_DESERT, "Village desertique", "village", rng)
 	for i in range(SNOW_BUILDING_COUNT):
 		_place_poi(ABANDONED_BUILDING_SCENE, WorldMap.BIOME_SNOW, "Immeuble abandonne", "building", rng)
 	for i in range(SNOW_STATION_COUNT):
 		_place_poi(ABANDONED_STATION_SCENE, WorldMap.BIOME_SNOW, "Gare abandonnee", "station", rng)
+	for pos2 in metro_positions:
+		_place_metro(pos2, rng)
 
 func _place_poi(scene: PackedScene, biome: String, label: String, poi_type: String, rng: RandomNumberGenerator) -> void:
 	var pos = _random_biome_position(rng, biome)
@@ -258,6 +304,24 @@ func _place_poi(scene: PackedScene, biome: String, label: String, poi_type: Stri
 	instance.transform.origin = pos
 	instance.rotation.y = rng.randf_range(0, TAU)
 	poi_list.append({"name": label, "pos": Vector2(pos.x, pos.z), "type": poi_type})
+
+# Metro entrances need their ground-mesh hole cut before the ground is
+# built (see _ready()), so their world position is decided up front in
+# _plan_metro_positions() and reused here instead of being resampled.
+func _plan_metro_positions(rng: RandomNumberGenerator) -> Array:
+	var positions := []
+	for i in range(SNOW_METRO_COUNT):
+		var pos = _random_biome_position(rng, WorldMap.BIOME_SNOW)
+		if pos != null:
+			positions.append(Vector2(pos.x, pos.z))
+	return positions
+
+func _place_metro(pos2: Vector2, rng: RandomNumberGenerator) -> void:
+	var instance = ABANDONED_METRO_SCENE.instance()
+	spawn_root.add_child(instance)
+	instance.transform.origin = Vector3(pos2.x, 0, pos2.y)
+	instance.rotation.y = rng.randf_range(0, TAU)
+	poi_list.append({"name": "Metro abandonne", "pos": pos2, "type": "metro"})
 
 # --- Helpers --------------------------------------------------------------
 
