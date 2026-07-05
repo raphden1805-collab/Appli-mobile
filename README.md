@@ -43,15 +43,43 @@ exécution headless avec driver vidéo `Dummy`) sans écran.
 
 ## Exporter en APK Android
 
+Un preset "Android" est déjà préparé dans `export_presets.cfg` (package
+`com.rustline.game`). Il reste à faire depuis un poste avec l'éditeur
+Godot (pas réalisable depuis cet environnement sans interface graphique) :
+
 1. Dans l'éditeur Godot : Editor > Manage Export Templates, installer les
    templates 3.5.
 2. Installer le SDK Android + configurer le chemin dans
    Editor > Editor Settings > Export > Android.
-3. Project > Export, ajouter un preset "Android", exporter l'APK.
+3. Project > Export : le preset "Android" existe déjà, cliquer sur
+   "Export Project" (il te demandera un keystore de debug la première
+   fois - Godot peut en générer un automatiquement).
 
-(Cette étape doit être faite depuis un poste avec l'éditeur Godot -
-elle n'est pas réalisable depuis cet environnement sans interface
-graphique.)
+## Exporter en IPA iOS (nécessite un Mac)
+
+Contrainte incontournable : Xcode ne tourne que sur macOS, donc cette
+étape doit être faite entièrement sur un Mac. Un preset "iOS" est déjà
+préparé dans `export_presets.cfg` (bundle id `com.rustline.game`,
+architecture arm64) ; il reste à renseigner les infos liées à ton compte
+Apple :
+
+1. Installer Godot 3.5 sur le Mac, ouvrir ce projet.
+2. Installer Xcode depuis l'App Store (peut prendre du temps la
+   première fois).
+3. Dans l'éditeur Godot : Editor > Manage Export Templates, installer
+   les templates 3.5 (téléchargement direct depuis le Mac, donc pas
+   soumis aux restrictions réseau qu'on a dans cet environnement cloud).
+4. Ouvrir Xcode > Settings > Accounts, connecter ton Apple ID (compte
+   gratuit suffit pour tester sur ton propre iPhone).
+5. Project > Export dans Godot : sélectionner le preset "iOS", renseigner
+   `application/app_store_team_id` (visible dans Xcode > Accounts, ou
+   dans ton compte developer.apple.com) et laisser Godot générer le
+   projet Xcode.
+6. Ouvrir le `.xcodeproj` généré dans Xcode, brancher l'iPhone en USB,
+   choisir ton appareil comme cible, et lancer (bouton Play). Avec un
+   compte gratuit, l'app installée expire au bout de 7 jours et doit
+   être réinstallée depuis Xcode ; avec un compte développeur payant
+   (99$/an) tu peux distribuer via TestFlight sans cette limite.
 
 ## Contrôles (test clavier/souris dans l'éditeur)
 

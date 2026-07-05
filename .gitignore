@@ -1,6 +1,7 @@
 .import/
 export.cfg
-export_presets.cfg
+builds/*.apk
+builds/*.ipa
 *.translation
 .godot/
 mono_crash.*.json
