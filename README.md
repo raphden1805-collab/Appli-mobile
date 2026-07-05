@@ -57,6 +57,12 @@ Ce qui est jouable aujourd'hui :
   cartes chacun) représenteraient facilement 1 Go+ rien que pour les
   textures de base - trop lourd à télécharger/charger en mémoire sur
   téléphone. Le 2K est déjà un bond net en qualité et reste raisonnable.
+- Flou d'arrière-plan (depth of field) sur la caméra : le décor lointain
+  est légèrement flouté, le premier plan net
+- Herbe individuelle animée par le vent (des milliers de brins réels via
+  MultiMesh, pas une texture plate) dans les plaines
+- L'outil tenu en main est un vrai modèle 3D de hache basse-poly (CC0,
+  Quaternius), plus les deux boîtes texturées d'avant
 
 Pas encore implémenté (prochaines étapes) : multijoueur/réseau,
 alliances et clans, PvP, faune/IA, sauvegarde de partie.
@@ -141,7 +147,9 @@ cadre, pour ne pas surcharger l'écran).
 assets/
   textures/           Textures PBR CC0 (ambientcg.com) : grass/sand/snow/
                       rock/bark/wood/metal/concrete
-  shaders/            ground.shader (melange biomes), water.shader (ocean)
+  shaders/            ground.shader (melange biomes), water.shader (ocean),
+                      grass.shader (brins d'herbe animes)
+  models/             Modeles CC0 (Quaternius) : Axe.obj (outil tenu en main)
 autoload/            Inventory.gd, GameManager.gd (etat global)
 scenes/
   Main.tscn/.gd       Point d'entree, assemble World + Player + HUD
@@ -151,9 +159,22 @@ scenes/
   ui/                 HUD, minimap, inventaire, joystick/visee tactiles
 ```
 
-Les textures viennent d'[ambientcg.com](https://ambientcg.com) (licence
-CC0 - domaine public, utilisation libre y compris commerciale, aucune
-attribution requise mais c'est une bonne pratique de la mentionner).
+Les textures viennent d'[ambientcg.com](https://ambientcg.com) et le
+modele de hache d'un pack CC0 de [Quaternius](https://www.patreon.com/quaternius)
+(via opengameart.org) - licence CC0, domaine public, utilisation libre y
+compris commerciale, aucune attribution requise mais c'est une bonne
+pratique de la mentionner.
+
+### Sur le photoréalisme
+
+Une capture du vrai jeu Rust a été comparée à ce projet : ce niveau de
+détail (mains/personnages modélisés et animés à la main, brouillard
+volumétrique) demande une équipe d'artistes 3D et des années de travail -
+structurellement hors de portée ici (pas d'outil de modélisation 3D,
+pas de pipeline d'animation de personnage). Ce qui a été fait à la
+place : de vraies textures et un vrai modèle d'outil (CC0), et les
+effets de rendu que Godot 3.5 permet nativement (DOF, herbe individuelle,
+SSAO, glow) - un plafond stylisé mais net, pas du photoréalisme AAA.
 
 ## Roadmap suggérée
 

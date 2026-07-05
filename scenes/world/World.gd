@@ -10,6 +10,7 @@ extends Spatial
 const WorldMap := preload("res://scenes/world/WorldMap.gd")
 const GROUND_SHADER := preload("res://assets/shaders/ground.shader")
 const WATER_SHADER := preload("res://assets/shaders/water.shader")
+const GRASS_SHADER := preload("res://assets/shaders/grass.shader")
 
 const TREE_SCENE := preload("res://scenes/world/Tree.tscn")
 const SNOW_TREE_SCENE := preload("res://scenes/world/SnowTree.tscn")
@@ -39,6 +40,8 @@ const SNOW_BUILDING_COUNT := 2
 const SNOW_STATION_COUNT := 2
 const MIN_SPAWN_DIST_FROM_CENTER := 8.0
 const MAX_PLACEMENT_ATTEMPTS := 250
+const GRASS_COUNT := 25000
+const GRASS_ATTEMPTS_PER_BLADE := 12
 
 onready var spawn_root: Spatial = $Spawns
 onready var ground: StaticBody = $Ground
@@ -54,6 +57,7 @@ func _ready() -> void:
 	rng.seed = GameManager.world_seed
 	_build_ground_mesh()
 	_build_water_mesh()
+	_build_grass(rng)
 	_scatter_forests(rng)
 	_scatter_vegetation(rng)
 	_scatter_rocks(rng)
@@ -116,6 +120,61 @@ func _add_vertex(st: SurfaceTool, pos: Vector3, w: Vector3) -> void:
 	st.add_color(Color(w.x, w.y, w.z))
 	st.add_normal(Vector3.UP)
 	st.add_vertex(pos)
+
+# --- Grass ----------------------------------------------------------------
+# Real per-blade geometry (not a texture) scattered with MultiMesh so it
+# stays a single draw call regardless of count: each blade is one
+# triangle whose tip vertex is tagged (via vertex color) so the shader
+# can bend it in the wind without touching the rooted base verts.
+
+func _build_grass(rng: RandomNumberGenerator) -> void:
+	var blade := _build_grass_blade_mesh()
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = blade
+
+	var transforms := []
+	for i in range(GRASS_COUNT):
+		var pos = null
+		for attempt in range(GRASS_ATTEMPTS_PER_BLADE):
+			var candidate := _random_position(rng)
+			if WorldMap.get_biome(noise, candidate.x, candidate.z) == WorldMap.BIOME_PLAINS:
+				pos = candidate
+				break
+		if pos == null:
+			continue
+		var s := rng.randf_range(0.8, 1.3)
+		var basis := Basis(Vector3.UP, rng.randf_range(0, TAU)).scaled(Vector3(s, s, s))
+		transforms.append(Transform(basis, pos))
+
+	mm.instance_count = transforms.size()
+	for i in range(transforms.size()):
+		mm.set_instance_transform(i, transforms[i])
+
+	var mmi := MultiMeshInstance.new()
+	mmi.multimesh = mm
+	var mat := ShaderMaterial.new()
+	mat.shader = GRASS_SHADER
+	mmi.material_override = mat
+	mmi.cast_shadow = GeometryInstance.SHADOW_CASTING_SETTING_OFF
+	add_child(mmi)
+
+func _build_grass_blade_mesh() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var half_width := 0.028
+	var height := 0.32
+	var lean := 0.06
+	st.add_color(Color(0, 0, 0))
+	st.add_normal(Vector3.UP)
+	st.add_vertex(Vector3(-half_width, 0, 0))
+	st.add_color(Color(0, 0, 0))
+	st.add_normal(Vector3.UP)
+	st.add_vertex(Vector3(half_width, 0, 0))
+	st.add_color(Color(1, 1, 1))
+	st.add_normal(Vector3.UP)
+	st.add_vertex(Vector3(0, height, lean))
+	return st.commit()
 
 # --- Water --------------------------------------------------------------
 
