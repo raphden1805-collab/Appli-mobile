@@ -1,6 +1,9 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://scenes/world/ResourceNode.gd" type="Script" id=1]
+[ext_resource path="res://assets/textures/bark/Color.png" type="Texture" id=2]
+[ext_resource path="res://assets/textures/bark/NormalGL.png" type="Texture" id=3]
+[ext_resource path="res://assets/textures/bark/Roughness.png" type="Texture" id=4]
 
 [sub_resource type="CylinderShape" id=1]
 radius = 0.35
@@ -12,8 +15,13 @@ bottom_radius = 0.38
 height = 3.2
 
 [sub_resource type="SpatialMaterial" id=3]
-albedo_color = Color( 0.3, 0.24, 0.22, 1 )
+albedo_color = Color( 0.5, 0.45, 0.45, 1 )
+albedo_texture = ExtResource( 2 )
 roughness = 0.9
+roughness_texture = ExtResource( 4 )
+normal_enabled = true
+normal_texture = ExtResource( 3 )
+uv1_scale = Vector3( 1, 3, 1 )
 
 [sub_resource type="SphereMesh" id=4]
 radius = 1.05

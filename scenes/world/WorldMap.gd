@@ -1,11 +1,25 @@
 extends Reference
-# Single source of truth for world layout: size, procedural biome noise
-# and colors. World.gd (ground/scattering) and Minimap.gd (the top-right
-# map) both call create_noise() with the same world seed and get back
-# an identical noise field, so the drawn map always matches the actual
-# 3D world without needing to share object references.
+# Single source of truth for world layout: the island is circular,
+# ringed by a sandy beach and then open ocean. World.gd (ground/water/
+# scattering) and Minimap.gd both call create_noise() with the same
+# world seed and get back an identical noise field, so the drawn map
+# always matches the actual 3D world without needing to share object
+# references.
 
-const WORLD_HALF_SIZE := 180.0
+# Gameplay land: desert/plains/snow biomes live inside this radius.
+const ISLAND_RADIUS := 170.0
+# Sandy ring between the island and open water.
+const BEACH_WIDTH := 16.0
+# The detailed ground mesh extends a little past the beach so its edge
+# is always hidden underwater regardless of camera angle.
+const GROUND_MESH_RADIUS := ISLAND_RADIUS + BEACH_WIDTH + 4.0
+# Big open-water plane so the horizon is never visible from the island
+# (fog hides everything past ~180 units anyway).
+const WATER_SIZE := 700.0
+const WATER_LEVEL := -0.2
+# Slightly bigger than the ground mesh so the minimap shows a strip of
+# open water framing the island.
+const MINIMAP_VIEW_RADIUS := GROUND_MESH_RADIUS * 1.15
 
 # Player always spawns near the origin - force that area to stay plains
 # regardless of the noise value so the start of a run is never a random
@@ -20,16 +34,20 @@ const NOISE_PERSISTENCE := 0.5
 # lowest band, snow the highest, plains fills the (wider) middle.
 const DESERT_THRESHOLD := -0.15
 const SNOW_THRESHOLD := 0.22
+const BLEND_EDGE := 0.06
 
 const BIOME_DESERT := "desert"
 const BIOME_PLAINS := "plaine"
 const BIOME_SNOW := "neige"
+const BIOME_BEACH := "plage"
 
 const BIOME_COLORS := {
 	"desert": Color(0.76, 0.68, 0.42),
 	"plaine": Color(0.3, 0.45, 0.22),
 	"neige": Color(0.85, 0.88, 0.92),
+	"plage": Color(0.82, 0.74, 0.55),
 }
+const OCEAN_COLOR := Color(0.1, 0.28, 0.4)
 
 static func create_noise(world_seed: int) -> OpenSimplexNoise:
 	var noise := OpenSimplexNoise.new()
@@ -39,6 +57,9 @@ static func create_noise(world_seed: int) -> OpenSimplexNoise:
 	noise.persistence = NOISE_PERSISTENCE
 	return noise
 
+# Categorical biome for gameplay logic (scattering, POI placement). Only
+# meaningful on land - callers are expected to only sample within
+# ISLAND_RADIUS (see World.gd's circular _random_position).
 static func get_biome(noise: OpenSimplexNoise, x: float, z: float) -> String:
 	if Vector2(x, z).length() < SPAWN_SAFE_RADIUS:
 		return BIOME_PLAINS
@@ -51,3 +72,37 @@ static func get_biome(noise: OpenSimplexNoise, x: float, z: float) -> String:
 
 static func get_biome_color(noise: OpenSimplexNoise, x: float, z: float) -> Color:
 	return BIOME_COLORS[get_biome(noise, x, z)]
+
+# Terrain color including the beach/ocean rings - used for the ground's
+# safety-net vertex colors and the minimap texture (not for gameplay).
+static func get_terrain_color(noise: OpenSimplexNoise, x: float, z: float) -> Color:
+	var dist := Vector2(x, z).length()
+	if dist > ISLAND_RADIUS + BEACH_WIDTH:
+		return OCEAN_COLOR
+	if dist > ISLAND_RADIUS:
+		return BIOME_COLORS[BIOME_BEACH]
+	return get_biome_color(noise, x, z)
+
+# Smooth (desert, plains, snow) texture-blend weights for the ground
+# shader - unlike get_biome() these blend continuously across the noise
+# thresholds so biome borders don't show a hard seam in the terrain
+# texture. Beach/ocean are treated as "desert" (sand) since they share
+# the same sand texture.
+static func get_biome_weights(noise: OpenSimplexNoise, x: float, z: float) -> Vector3:
+	var dist := Vector2(x, z).length()
+	if dist > ISLAND_RADIUS:
+		return Vector3(1, 0, 0)
+	if dist < SPAWN_SAFE_RADIUS:
+		return Vector3(0, 1, 0)
+	var v := noise.get_noise_2d(x, z)
+	var desert_w := 1.0 - _smooth_step(DESERT_THRESHOLD - BLEND_EDGE, DESERT_THRESHOLD + BLEND_EDGE, v)
+	var snow_w := _smooth_step(SNOW_THRESHOLD - BLEND_EDGE, SNOW_THRESHOLD + BLEND_EDGE, v)
+	var plains_w := clamp(1.0 - desert_w - snow_w, 0.0, 1.0)
+	var total := desert_w + plains_w + snow_w
+	if total < 0.0001:
+		return Vector3(0, 1, 0)
+	return Vector3(desert_w, plains_w, snow_w) / total
+
+static func _smooth_step(edge0: float, edge1: float, x: float) -> float:
+	var t := clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0)
+	return t * t * (3.0 - 2.0 * t)

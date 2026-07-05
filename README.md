@@ -37,9 +37,19 @@ Ce qui est jouable aujourd'hui :
   cercle jaune = ruines de départ), boussole "N", flèche joueur
 - Panneau d'inventaire dédié (touche I ou bouton "Sac") avec un slot par
   ressource, en plus du compteur rapide déjà affiché en haut à droite
-- Environnement amélioré : SSAO, glow, tonemapping filmique, feuillage
-  des arbres en grappe (plus organique qu'un simple cône), légère
-  variation de teinte par instance pour casser l'effet copier-coller
+- Environnement amélioré : SSAO, glow, tonemapping filmique, anti-aliasing
+  (MSAA), feuillage des arbres en grappe (plus organique qu'un simple
+  cône), légère variation de teinte par instance pour casser l'effet
+  copier-coller
+- L'île est entourée d'une plage de sable puis d'un océan à perte de vue :
+  eau animée (vagues, transparence, reflets de fresnel, dégradé
+  peu profond/profond) via un shader dédié
+- Textures PBR réelles (libres de droits, CC0, via ambientcg.com) sur le
+  sol (mélange herbe/sable/neige par shader selon le biome), les arbres
+  (écorce), les rochers, les pièces de construction (bois/béton), les
+  bâtiments abandonnés, les caisses et le minerai - fini les couleurs
+  plates, look nettement plus réaliste tout en restant des formes
+  simples (pas d'accès à une bibliothèque de modèles 3D détaillés ici)
 
 Pas encore implémenté (prochaines étapes) : multijoueur/réseau,
 alliances et clans, PvP, faune/IA, sauvegarde de partie.
@@ -121,6 +131,10 @@ cadre, pour ne pas surcharger l'écran).
 ## Structure du projet
 
 ```
+assets/
+  textures/           Textures PBR CC0 (ambientcg.com) : grass/sand/snow/
+                      rock/bark/wood/metal/concrete
+  shaders/            ground.shader (melange biomes), water.shader (ocean)
 autoload/            Inventory.gd, GameManager.gd (etat global)
 scenes/
   Main.tscn/.gd       Point d'entree, assemble World + Player + HUD
@@ -129,6 +143,10 @@ scenes/
   building/           Systeme de construction (fondation, mur, porte)
   ui/                 HUD, minimap, inventaire, joystick/visee tactiles
 ```
+
+Les textures viennent d'[ambientcg.com](https://ambientcg.com) (licence
+CC0 - domaine public, utilisation libre y compris commerciale, aucune
+attribution requise mais c'est une bonne pratique de la mentionner).
 
 ## Roadmap suggérée
 

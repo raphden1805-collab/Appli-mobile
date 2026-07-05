@@ -1,10 +1,13 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://scenes/world/World.gd" type="Script" id=1]
 [ext_resource path="res://scenes/world/LootCrate.tscn" type="PackedScene" id=2]
+[ext_resource path="res://assets/textures/concrete/Color.png" type="Texture" id=3]
+[ext_resource path="res://assets/textures/concrete/NormalGL.png" type="Texture" id=4]
+[ext_resource path="res://assets/textures/concrete/Roughness.png" type="Texture" id=5]
 
 [sub_resource type="BoxShape" id=3]
-extents = Vector3( 180, 0.5, 180 )
+extents = Vector3( 400, 0.5, 400 )
 
 [sub_resource type="ProceduralSky" id=4]
 sky_top_color = Color( 0.32, 0.5, 0.75, 1 )
@@ -18,9 +21,9 @@ background_sky = SubResource( 4 )
 ambient_light_color = Color( 0.6, 0.62, 0.65, 1 )
 ambient_light_energy = 0.6
 fog_enabled = true
-fog_color = Color( 0.7, 0.76, 0.78, 1 )
-fog_depth_begin = 60.0
-fog_depth_end = 180.0
+fog_color = Color( 0.72, 0.79, 0.82, 1 )
+fog_depth_begin = 90.0
+fog_depth_end = 280.0
 ssao_enabled = true
 ssao_radius = 1.5
 ssao_intensity = 1.2
@@ -41,8 +44,13 @@ extents = Vector3( 2, 1.2, 0.2 )
 size = Vector3( 4, 2.4, 0.4 )
 
 [sub_resource type="SpatialMaterial" id=8]
-albedo_color = Color( 0.55, 0.53, 0.5, 1 )
+albedo_color = Color( 0.7, 0.68, 0.65, 1 )
+albedo_texture = ExtResource( 3 )
 roughness = 1.0
+roughness_texture = ExtResource( 5 )
+normal_enabled = true
+normal_texture = ExtResource( 4 )
+uv1_scale = Vector3( 2, 1.2, 1 )
 
 [node name="World" type="Spatial"]
 script = ExtResource( 1 )

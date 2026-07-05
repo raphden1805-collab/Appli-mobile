@@ -1,4 +1,8 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=14 format=2]
+
+[ext_resource path="res://assets/textures/wood/Color.png" type="Texture" id=1]
+[ext_resource path="res://assets/textures/wood/NormalGL.png" type="Texture" id=2]
+[ext_resource path="res://assets/textures/wood/Roughness.png" type="Texture" id=3]
 
 [sub_resource type="BoxShape" id=1]
 extents = Vector3( 0.125, 1.5, 1.75 )
@@ -25,12 +29,22 @@ extents = Vector3( 1.95, 0.1, 1.95 )
 size = Vector3( 3.9, 0.2, 3.9 )
 
 [sub_resource type="SpatialMaterial" id=9]
-albedo_color = Color( 0.72, 0.6, 0.42, 1 )
+albedo_color = Color( 0.85, 0.75, 0.6, 1 )
+albedo_texture = ExtResource( 1 )
 roughness = 0.9
+roughness_texture = ExtResource( 3 )
+normal_enabled = true
+normal_texture = ExtResource( 2 )
+uv1_scale = Vector3( 1.5, 1.5, 1 )
 
 [sub_resource type="SpatialMaterial" id=10]
-albedo_color = Color( 0.45, 0.32, 0.2, 1 )
+albedo_color = Color( 0.55, 0.4, 0.28, 1 )
+albedo_texture = ExtResource( 1 )
 roughness = 0.85
+roughness_texture = ExtResource( 3 )
+normal_enabled = true
+normal_texture = ExtResource( 2 )
+uv1_scale = Vector3( 1.5, 1.5, 1 )
 
 [node name="DesertHut" type="Spatial"]
 

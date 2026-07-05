@@ -21,7 +21,7 @@ func set_poi_list(list: Array) -> void:
 
 func _build_background_texture() -> void:
 	var noise := WorldMap.create_noise(GameManager.world_seed)
-	var half := WorldMap.WORLD_HALF_SIZE
+	var half := WorldMap.MINIMAP_VIEW_RADIUS
 	var img := Image.new()
 	img.create(TEXTURE_RESOLUTION, TEXTURE_RESOLUTION, false, Image.FORMAT_RGB8)
 	img.lock()
@@ -29,7 +29,7 @@ func _build_background_texture() -> void:
 		var wz: float = (float(yi) / TEXTURE_RESOLUTION) * half * 2.0 - half
 		for xi in range(TEXTURE_RESOLUTION):
 			var wx: float = (float(xi) / TEXTURE_RESOLUTION) * half * 2.0 - half
-			img.set_pixel(xi, yi, WorldMap.get_biome_color(noise, wx, wz))
+			img.set_pixel(xi, yi, WorldMap.get_terrain_color(noise, wx, wz))
 	img.unlock()
 	bg_texture = ImageTexture.new()
 	bg_texture.create_from_image(img, Texture.FLAG_FILTER)
@@ -40,7 +40,7 @@ func _process(_delta: float) -> void:
 
 func _draw() -> void:
 	var size := rect_size
-	var half := WorldMap.WORLD_HALF_SIZE
+	var half := WorldMap.MINIMAP_VIEW_RADIUS
 
 	if bg_texture:
 		draw_texture_rect(bg_texture, Rect2(Vector2.ZERO, size), false)

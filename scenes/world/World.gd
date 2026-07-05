@@ -1,12 +1,15 @@
 extends Spatial
-# Builds the whole map on load: a single vertex-colored ground mesh and
-# biome-aware scattering, both driven by the same OpenSimplexNoise field
-# (see WorldMap.gd) so the ground colors, the scattered resources and
-# the minimap always agree on where the desert/plains/snow are. Uses a
-# fixed seed (GameManager.world_seed) so the layout is reproducible run
-# to run while the prototype has no save system yet.
+# Builds the whole map on load: a texture-splatted ground mesh, a
+# surrounding ocean, and biome-aware scattering, all driven by the same
+# OpenSimplexNoise field (see WorldMap.gd) so the ground colors, the
+# scattered resources and the minimap always agree on where the
+# desert/plains/snow/beach are. Uses a fixed seed (GameManager.world_seed)
+# so the layout is reproducible run to run while the prototype has no
+# save system yet.
 
 const WorldMap := preload("res://scenes/world/WorldMap.gd")
+const GROUND_SHADER := preload("res://assets/shaders/ground.shader")
+const WATER_SHADER := preload("res://assets/shaders/water.shader")
 
 const TREE_SCENE := preload("res://scenes/world/Tree.tscn")
 const SNOW_TREE_SCENE := preload("res://scenes/world/SnowTree.tscn")
@@ -20,7 +23,8 @@ const DESERT_VILLAGE_SCENE := preload("res://scenes/world/DesertVillage.tscn")
 const ABANDONED_BUILDING_SCENE := preload("res://scenes/world/AbandonedBuilding.tscn")
 const ABANDONED_STATION_SCENE := preload("res://scenes/world/AbandonedStation.tscn")
 
-const GROUND_RESOLUTION := 72
+const GROUND_RESOLUTION := 96
+const WATER_RESOLUTION := 100
 
 const VEGETATION_COUNT := 100
 const FOREST_CLUSTERS := 8
@@ -47,6 +51,7 @@ func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = GameManager.world_seed
 	_build_ground_mesh()
+	_build_water_mesh()
 	_scatter_forests(rng)
 	_scatter_vegetation(rng)
 	_scatter_rocks(rng)
@@ -58,7 +63,7 @@ func _ready() -> void:
 # --- Ground -----------------------------------------------------------
 
 func _build_ground_mesh() -> void:
-	var half := WorldMap.WORLD_HALF_SIZE
+	var half := WorldMap.GROUND_MESH_RADIUS
 	var step := (half * 2.0) / GROUND_RESOLUTION
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -72,32 +77,59 @@ func _build_ground_mesh() -> void:
 			var p10 := Vector3(x1, 0, z0)
 			var p01 := Vector3(x0, 0, z1)
 			var p11 := Vector3(x1, 0, z1)
-			var c00 := WorldMap.get_biome_color(noise, x0, z0)
-			var c10 := WorldMap.get_biome_color(noise, x1, z0)
-			var c01 := WorldMap.get_biome_color(noise, x0, z1)
-			var c11 := WorldMap.get_biome_color(noise, x1, z1)
-			_add_tri(st, p00, p10, p11, c00, c10, c11)
-			_add_tri(st, p00, p11, p01, c00, c11, c01)
+			var w00 := WorldMap.get_biome_weights(noise, x0, z0)
+			var w10 := WorldMap.get_biome_weights(noise, x1, z0)
+			var w01 := WorldMap.get_biome_weights(noise, x0, z1)
+			var w11 := WorldMap.get_biome_weights(noise, x1, z1)
+			_add_tri(st, p00, p10, p11, w00, w10, w11)
+			_add_tri(st, p00, p11, p01, w00, w11, w01)
+	st.generate_tangents()
 	var mesh_data := st.commit()
 	var mesh_instance := MeshInstance.new()
 	mesh_instance.mesh = mesh_data
-	var mat := SpatialMaterial.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 1.0
-	mat.params_cull_mode = SpatialMaterial.CULL_DISABLED
-	mesh_instance.material_override = mat
+	mesh_instance.material_override = _build_ground_material()
 	ground.add_child(mesh_instance)
 
-func _add_tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, ca: Color, cb: Color, cc: Color) -> void:
-	st.add_color(ca)
+func _build_ground_material() -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = GROUND_SHADER
+	mat.set_shader_param("sand_albedo", load("res://assets/textures/sand/Color.png"))
+	mat.set_shader_param("sand_normal", load("res://assets/textures/sand/NormalGL.png"))
+	mat.set_shader_param("sand_roughness", load("res://assets/textures/sand/Roughness.png"))
+	mat.set_shader_param("grass_albedo", load("res://assets/textures/grass/Color.png"))
+	mat.set_shader_param("grass_normal", load("res://assets/textures/grass/NormalGL.png"))
+	mat.set_shader_param("grass_roughness", load("res://assets/textures/grass/Roughness.png"))
+	mat.set_shader_param("snow_albedo", load("res://assets/textures/snow/Color.png"))
+	mat.set_shader_param("snow_normal", load("res://assets/textures/snow/NormalGL.png"))
+	mat.set_shader_param("snow_roughness", load("res://assets/textures/snow/Roughness.png"))
+	return mat
+
+func _add_tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, wa: Vector3, wb: Vector3, wc: Vector3) -> void:
+	_add_vertex(st, a, wa)
+	_add_vertex(st, b, wb)
+	_add_vertex(st, c, wc)
+
+func _add_vertex(st: SurfaceTool, pos: Vector3, w: Vector3) -> void:
+	st.add_uv(Vector2(pos.x, pos.z))
+	st.add_color(Color(w.x, w.y, w.z))
 	st.add_normal(Vector3.UP)
-	st.add_vertex(a)
-	st.add_color(cb)
-	st.add_normal(Vector3.UP)
-	st.add_vertex(b)
-	st.add_color(cc)
-	st.add_normal(Vector3.UP)
-	st.add_vertex(c)
+	st.add_vertex(pos)
+
+# --- Water --------------------------------------------------------------
+
+func _build_water_mesh() -> void:
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(WorldMap.WATER_SIZE, WorldMap.WATER_SIZE)
+	plane.subdivide_width = WATER_RESOLUTION
+	plane.subdivide_depth = WATER_RESOLUTION
+	var mesh_instance := MeshInstance.new()
+	mesh_instance.mesh = plane
+	mesh_instance.transform.origin = Vector3(0, WorldMap.WATER_LEVEL, 0)
+	var mat := ShaderMaterial.new()
+	mat.shader = WATER_SHADER
+	mat.set_shader_param("coast_radius", WorldMap.ISLAND_RADIUS + WorldMap.BEACH_WIDTH)
+	mesh_instance.material_override = mat
+	add_child(mesh_instance)
 
 # --- Scattering ---------------------------------------------------------
 
@@ -197,17 +229,15 @@ func _find_mesh_instances(node: Node) -> Array:
 			result.append_array(_find_mesh_instances(child))
 	return result
 
+# Uniform-in-area sampling within the circular island (sqrt of a
+# uniform random radius avoids over-density near the center).
 func _random_position(rng: RandomNumberGenerator) -> Vector3:
-	var pos := Vector3.ZERO
 	while true:
-		pos = Vector3(
-			rng.randf_range(-WorldMap.WORLD_HALF_SIZE, WorldMap.WORLD_HALF_SIZE),
-			0,
-			rng.randf_range(-WorldMap.WORLD_HALF_SIZE, WorldMap.WORLD_HALF_SIZE)
-		)
-		if pos.length() > MIN_SPAWN_DIST_FROM_CENTER:
-			break
-	return pos
+		var angle := rng.randf_range(0, TAU)
+		var r := sqrt(rng.randf()) * WorldMap.ISLAND_RADIUS
+		if r > MIN_SPAWN_DIST_FROM_CENTER:
+			return Vector3(cos(angle) * r, 0, sin(angle) * r)
+	return Vector3.ZERO
 
 # Rejection-samples a random position until it lands in the requested
 # biome, or returns null if it couldn't find one within the attempt budget
