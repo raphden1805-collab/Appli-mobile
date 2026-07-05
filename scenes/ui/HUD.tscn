@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://scenes/ui/HUD.gd" type="Script" id=1]
 [ext_resource path="res://scenes/ui/TouchJoystick.gd" type="Script" id=2]
 [ext_resource path="res://scenes/ui/TouchLookArea.gd" type="Script" id=3]
+[ext_resource path="res://scenes/ui/Minimap.gd" type="Script" id=4]
+[ext_resource path="res://scenes/ui/InventoryPanel.gd" type="Script" id=5]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource( 1 )
@@ -41,19 +43,31 @@ max_value = 100.0
 value = 100.0
 percent_visible = false
 
-[node name="InventoryPanel" type="Control" parent="."]
+[node name="ResourceCounter" type="Control" parent="."]
 anchor_left = 0.62
 anchor_top = 0.02
 anchor_right = 0.98
 anchor_bottom = 0.08
 mouse_filter = 2
 
-[node name="InventoryLabel" type="Label" parent="InventoryPanel"]
+[node name="InventoryLabel" type="Label" parent="ResourceCounter"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 align = 2
 valign = 1
 text = "Bois: 0   Pierre: 0   Metal: 0"
+
+[node name="Minimap" type="Control" parent="."]
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+margin_left = -260.0
+margin_top = 90.0
+margin_right = -20.0
+margin_bottom = 330.0
+mouse_filter = 2
+script = ExtResource( 4 )
 
 [node name="InteractPrompt" type="Label" parent="."]
 anchor_left = 0.3
@@ -146,3 +160,50 @@ anchor_right = 0.99
 anchor_bottom = 1.0
 toggle_mode = true
 text = "Construire"
+
+[node name="InventoryButton" type="Button" parent="Controls"]
+anchor_left = 0.03
+anchor_top = 0.58
+anchor_right = 0.16
+anchor_bottom = 0.66
+text = "Sac"
+
+[node name="InventoryPanel" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 5 )
+
+[node name="Dim" type="ColorRect" parent="InventoryPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0, 0, 0, 0.55 )
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="InventoryPanel"]
+anchor_left = 0.22
+anchor_top = 0.14
+anchor_right = 0.78
+anchor_bottom = 0.86
+
+[node name="Margin" type="MarginContainer" parent="InventoryPanel/Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/margin_right = 24
+custom_constants/margin_top = 24
+custom_constants/margin_left = 24
+custom_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="InventoryPanel/Panel/Margin"]
+custom_constants/separation = 16
+
+[node name="Title" type="Label" parent="InventoryPanel/Panel/Margin/VBox"]
+align = 1
+text = "Inventaire"
+
+[node name="Grid" type="GridContainer" parent="InventoryPanel/Panel/Margin/VBox"]
+columns = 3
+
+[node name="CloseButton" type="Button" parent="InventoryPanel/Panel/Margin/VBox"]
+text = "Fermer"
+
+[connection signal="pressed" from="InventoryPanel/Panel/Margin/VBox/CloseButton" to="InventoryPanel" method="_on_close_pressed"]

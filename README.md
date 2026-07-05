@@ -22,6 +22,17 @@ Ce qui est jouable aujourd'hui :
   de glissement (visée caméra), boutons d'action (sauter, sprint,
   récolter/placer, interagir, construire) - en plus du clavier/souris
   pour tester depuis l'éditeur Godot
+- Monde divisé en 3 biomes (désert, plaine, neige) avec ressources et
+  décors adaptés (arbres/rochers reskinnés, cactus décoratifs)
+- Deux lieux abandonnés : un immeuble en ruine (désert) et une gare
+  abandonnée avec un wagon rouillé (neige), tous deux lootables
+- Carte complète en haut à droite du HUD (biomes, points d'intérêt,
+  position/orientation du joueur)
+- Panneau d'inventaire dédié (touche I ou bouton "Sac") avec un slot par
+  ressource, en plus du compteur rapide déjà affiché en haut à droite
+- Environnement amélioré : SSAO, glow, tonemapping filmique, feuillage
+  des arbres en grappe (plus organique qu'un simple cône), légère
+  variation de teinte par instance pour casser l'effet copier-coller
 
 Pas encore implémenté (prochaines étapes) : multijoueur/réseau,
 alliances et clans, PvP, faune/IA, sauvegarde de partie.
@@ -94,6 +105,7 @@ Apple :
 | Mode construction | B |
 | Pièce suivante | Tab |
 | Rotation de la pièce | R |
+| Ouvrir/fermer l'inventaire | I |
 
 Sur mobile, les mêmes actions sont disponibles via le joystick, la zone
 de glissement et les boutons à l'écran.
@@ -105,9 +117,9 @@ autoload/            Inventory.gd, GameManager.gd (etat global)
 scenes/
   Main.tscn/.gd       Point d'entree, assemble World + Player + HUD
   player/             Controleur FPS (deplacement, recolte, construction)
-  world/              Monde, arbres/rochers/minerai, caisses de butin
+  world/              Monde, biomes (WorldMap.gd), ressources, POI abandonnes
   building/           Systeme de construction (fondation, mur, porte)
-  ui/                 HUD, joystick tactile, zone de visee tactile
+  ui/                 HUD, minimap, inventaire, joystick/visee tactiles
 ```
 
 ## Roadmap suggérée

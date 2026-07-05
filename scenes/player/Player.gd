@@ -55,6 +55,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.scancode == KEY_ESCAPE:
 		var captured := Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if captured else Input.MOUSE_MODE_CAPTURED)
+	if GameManager.is_inventory_open:
+		return
 	if event.is_action_pressed("primary_action"):
 		harvest_or_fire()
 	if event.is_action_pressed("interact"):
@@ -88,13 +90,14 @@ func _physics_process(delta: float) -> void:
 
 func _process_movement(delta: float) -> void:
 	var input_vector := Vector2.ZERO
-	input_vector.x = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
-	input_vector.y = Input.get_action_strength("move_back") - Input.get_action_strength("move_forward")
-	input_vector += touch_move_vector
+	if not GameManager.is_inventory_open:
+		input_vector.x = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
+		input_vector.y = Input.get_action_strength("move_back") - Input.get_action_strength("move_forward")
+		input_vector += touch_move_vector
 	if input_vector.length() > 1.0:
 		input_vector = input_vector.normalized()
 
-	var sprinting := Input.is_action_pressed("sprint") and stamina > 0.0
+	var sprinting := not GameManager.is_inventory_open and Input.is_action_pressed("sprint") and stamina > 0.0
 	var speed := SPRINT_SPEED if sprinting else WALK_SPEED
 
 	var direction := (transform.basis.x * input_vector.x + transform.basis.z * input_vector.y)

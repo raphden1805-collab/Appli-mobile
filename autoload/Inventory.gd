@@ -10,6 +10,14 @@ var items := {
 	"metal": 0,
 }
 
+# Display metadata for the inventory screen (kept as an ordered array so
+# the panel always lists items in the same order).
+const ITEM_INFO := [
+	{"key": "wood", "label": "Bois", "color": Color(0.55, 0.36, 0.18)},
+	{"key": "stone", "label": "Pierre", "color": Color(0.55, 0.55, 0.55)},
+	{"key": "metal", "label": "Metal", "color": Color(0.65, 0.67, 0.7)},
+]
+
 func add_item(item_name: String, amount: int) -> void:
 	if amount <= 0:
 		return

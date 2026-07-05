@@ -7,9 +7,10 @@ var player = null
 
 onready var joystick: Control = $Controls/MoveJoystick
 onready var look_area: Control = $Controls/LookArea
+onready var minimap = $Minimap
 onready var health_bar: ProgressBar = $Vitals/HealthBar
 onready var stamina_bar: ProgressBar = $Vitals/StaminaBar
-onready var inventory_label: Label = $InventoryPanel/InventoryLabel
+onready var inventory_label: Label = $ResourceCounter/InventoryLabel
 onready var interact_label: Label = $InteractPrompt
 onready var build_panel: Control = $BuildPanel
 onready var build_piece_label: Label = $BuildPanel/PieceLabel
@@ -20,6 +21,8 @@ onready var interact_button: Button = $Controls/InteractButton
 onready var build_toggle_button: Button = $Controls/BuildToggleButton
 onready var build_next_button: Button = $BuildPanel/PieceButtons/NextButton
 onready var build_rotate_button: Button = $BuildPanel/PieceButtons/RotateButton
+onready var inventory_button: Button = $Controls/InventoryButton
+onready var inventory_panel = $InventoryPanel
 
 func _ready() -> void:
 	jump_button.connect("button_down", self, "_on_jump_down")
@@ -31,6 +34,7 @@ func _ready() -> void:
 	build_toggle_button.connect("pressed", self, "_on_build_toggle_pressed")
 	build_next_button.connect("pressed", self, "_on_build_next_pressed")
 	build_rotate_button.connect("pressed", self, "_on_build_rotate_pressed")
+	inventory_button.connect("pressed", self, "_on_inventory_button_pressed")
 	build_panel.visible = false
 	interact_label.text = ""
 	Inventory.connect("inventory_changed", self, "_on_inventory_changed")
@@ -38,6 +42,7 @@ func _ready() -> void:
 
 func set_player(p) -> void:
 	player = p
+	minimap.player = p
 	player.connect("health_changed", self, "_on_health_changed")
 	player.connect("stamina_changed", self, "_on_stamina_changed")
 	player.connect("interact_prompt_changed", self, "_on_interact_prompt_changed")
@@ -45,6 +50,8 @@ func set_player(p) -> void:
 
 func _process(_delta: float) -> void:
 	if not player:
+		return
+	if GameManager.is_inventory_open:
 		return
 	player.set_touch_move_vector(joystick.output_vector)
 	var look_delta: Vector2 = look_area.consume_delta()
@@ -110,3 +117,6 @@ func _on_build_next_pressed() -> void:
 
 func _on_build_rotate_pressed() -> void:
 	player.rotate_build_ghost()
+
+func _on_inventory_button_pressed() -> void:
+	inventory_panel.toggle()
