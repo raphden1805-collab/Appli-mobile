@@ -1,0 +1,34 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://scenes/world/ResourceNode.gd" type="Script" id=1]
+
+[sub_resource type="BoxShape" id=1]
+extents = Vector3( 0.7, 0.55, 0.7 )
+
+[sub_resource type="CubeMesh" id=2]
+size = Vector3( 1.4, 1.1, 1.4 )
+
+[sub_resource type="SpatialMaterial" id=3]
+albedo_color = Color( 0.4, 0.35, 0.32, 1 )
+metallic = 0.4
+metallic_specular = 0.8
+roughness = 0.6
+emission_enabled = true
+emission = Color( 0.55, 0.28, 0.08, 1 )
+emission_energy = 0.15
+
+[node name="MetalOre" type="StaticBody"]
+script = ExtResource( 1 )
+resource_type = "metal"
+max_health = 100.0
+yield_per_hit = 6
+final_yield_bonus = 12
+
+[node name="CollisionShape" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0 )
+shape = SubResource( 1 )
+
+[node name="Mesh" type="MeshInstance" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0 )
+mesh = SubResource( 2 )
+material/0 = SubResource( 3 )
