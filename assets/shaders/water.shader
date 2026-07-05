@@ -2,16 +2,18 @@ shader_type spatial;
 render_mode blend_mix, cull_disabled, diffuse_burley, specular_schlick_ggx;
 
 // Stylised ocean: gentle multi-directional sine waves, a shallow-to-deep
-// color blend keyed off distance from the island's coastline (accurate
-// here since the island is circular - a cheap stand-in for real depth
-// sampling), and a fresnel rim for grazing-angle reflectivity/glow.
+// color blend keyed off distance from the island's average coastline
+// radius (the real coastline is an irregular blob - this is a cheap
+// distance-based stand-in, widened via fade_distance so it still reads
+// fine against the actual bays/peninsulas), and a fresnel rim for
+// grazing-angle reflectivity/glow.
 
 uniform vec4 shallow_color : hint_color = vec4(0.3, 0.62, 0.6, 0.55);
 uniform vec4 deep_color : hint_color = vec4(0.02, 0.12, 0.24, 0.95);
 uniform float wave_height = 0.16;
 uniform float wave_speed = 0.6;
-uniform float coast_radius = 186.0;
-uniform float fade_distance = 60.0;
+uniform float coast_radius = 166.0;
+uniform float fade_distance = 115.0;
 
 varying float v_depth_t;
 

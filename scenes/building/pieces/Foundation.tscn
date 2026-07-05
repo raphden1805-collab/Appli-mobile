@@ -1,9 +1,9 @@
 [gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://scenes/building/BuildPiece.gd" type="Script" id=1]
-[ext_resource path="res://assets/textures/concrete/Color.png" type="Texture" id=2]
-[ext_resource path="res://assets/textures/concrete/NormalGL.png" type="Texture" id=3]
-[ext_resource path="res://assets/textures/concrete/Roughness.png" type="Texture" id=4]
+[ext_resource path="res://assets/textures/concrete/Color.jpg" type="Texture" id=2]
+[ext_resource path="res://assets/textures/concrete/NormalGL.jpg" type="Texture" id=3]
+[ext_resource path="res://assets/textures/concrete/Roughness.jpg" type="Texture" id=4]
 
 [sub_resource type="BoxShape" id=1]
 extents = Vector3( 2, 0.15, 2 )

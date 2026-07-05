@@ -23,9 +23,11 @@ Ce qui est jouable aujourd'hui :
   récolter/placer, interagir, construire) - en plus du clavier/souris
   pour tester depuis l'éditeur Godot
 - Monde de 360x360 avec biomes **générés aléatoirement** (bruit de
-  Perlin/Simplex, formes organiques) : désert, plaine, neige - le sol
-  est un seul mesh à couleurs de sommets (pas de bandes fixes), la zone
+  Perlin/Simplex, formes organiques) : désert, plaine, neige - la zone
   de spawn reste toujours en plaine quelle que soit la seed
+- **Île de forme vraiment aléatoire** : le littoral n'est pas un cercle
+  mais un bruit angulaire (baies, péninsules) - change complètement de
+  forme à chaque seed, visible sur la minimap
 - Forêts denses regroupées dans les plaines (en plus d'arbres épars),
   cactus décoratifs dans le désert
 - Points d'intérêt placés aléatoirement selon le biome : 2 villages
@@ -44,12 +46,17 @@ Ce qui est jouable aujourd'hui :
 - L'île est entourée d'une plage de sable puis d'un océan à perte de vue :
   eau animée (vagues, transparence, reflets de fresnel, dégradé
   peu profond/profond) via un shader dédié
-- Textures PBR réelles (libres de droits, CC0, via ambientcg.com) sur le
-  sol (mélange herbe/sable/neige par shader selon le biome), les arbres
-  (écorce), les rochers, les pièces de construction (bois/béton), les
-  bâtiments abandonnés, les caisses et le minerai - fini les couleurs
-  plates, look nettement plus réaliste tout en restant des formes
-  simples (pas d'accès à une bibliothèque de modèles 3D détaillés ici)
+- Textures PBR réelles **2K (2048x2048)**, libres de droits (CC0, via
+  ambientcg.com), sur le sol (mélange herbe/sable/neige par shader selon
+  le biome), les arbres (écorce), les rochers, les pièces de
+  construction (bois/béton), les bâtiments abandonnés, les caisses et
+  le minerai - fini les couleurs plates, look nettement plus réaliste
+  tout en restant des formes simples (pas d'accès à une bibliothèque de
+  modèles 3D détaillés ici). Résolution volontairement limitée à 2K et
+  non 4K : sur une appli mobile, des textures 4K (8 matériaux x plusieurs
+  cartes chacun) représenteraient facilement 1 Go+ rien que pour les
+  textures de base - trop lourd à télécharger/charger en mémoire sur
+  téléphone. Le 2K est déjà un bond net en qualité et reste raisonnable.
 
 Pas encore implémenté (prochaines étapes) : multijoueur/réseau,
 alliances et clans, PvP, faune/IA, sauvegarde de partie.

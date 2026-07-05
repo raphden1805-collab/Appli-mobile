@@ -2,12 +2,12 @@
 
 [ext_resource path="res://scenes/world/World.gd" type="Script" id=1]
 [ext_resource path="res://scenes/world/LootCrate.tscn" type="PackedScene" id=2]
-[ext_resource path="res://assets/textures/concrete/Color.png" type="Texture" id=3]
-[ext_resource path="res://assets/textures/concrete/NormalGL.png" type="Texture" id=4]
-[ext_resource path="res://assets/textures/concrete/Roughness.png" type="Texture" id=5]
+[ext_resource path="res://assets/textures/concrete/Color.jpg" type="Texture" id=3]
+[ext_resource path="res://assets/textures/concrete/NormalGL.jpg" type="Texture" id=4]
+[ext_resource path="res://assets/textures/concrete/Roughness.jpg" type="Texture" id=5]
 
 [sub_resource type="BoxShape" id=3]
-extents = Vector3( 400, 0.5, 400 )
+extents = Vector3( 460, 0.5, 460 )
 
 [sub_resource type="ProceduralSky" id=4]
 sky_top_color = Color( 0.32, 0.5, 0.75, 1 )

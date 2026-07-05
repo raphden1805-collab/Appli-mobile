@@ -1,9 +1,9 @@
 [gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://scenes/world/LootCrate.gd" type="Script" id=1]
-[ext_resource path="res://assets/textures/wood/Color.png" type="Texture" id=2]
-[ext_resource path="res://assets/textures/wood/NormalGL.png" type="Texture" id=3]
-[ext_resource path="res://assets/textures/wood/Roughness.png" type="Texture" id=4]
+[ext_resource path="res://assets/textures/wood/Color.jpg" type="Texture" id=2]
+[ext_resource path="res://assets/textures/wood/NormalGL.jpg" type="Texture" id=3]
+[ext_resource path="res://assets/textures/wood/Roughness.jpg" type="Texture" id=4]
 
 [sub_resource type="BoxShape" id=1]
 extents = Vector3( 0.45, 0.4, 0.45 )

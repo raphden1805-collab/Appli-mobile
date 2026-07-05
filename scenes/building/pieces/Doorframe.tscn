@@ -1,9 +1,9 @@
 [gd_scene load_steps=12 format=2]
 
 [ext_resource path="res://scenes/building/BuildPiece.gd" type="Script" id=1]
-[ext_resource path="res://assets/textures/wood/Color.png" type="Texture" id=9]
-[ext_resource path="res://assets/textures/wood/NormalGL.png" type="Texture" id=10]
-[ext_resource path="res://assets/textures/wood/Roughness.png" type="Texture" id=11]
+[ext_resource path="res://assets/textures/wood/Color.jpg" type="Texture" id=9]
+[ext_resource path="res://assets/textures/wood/NormalGL.jpg" type="Texture" id=10]
+[ext_resource path="res://assets/textures/wood/Roughness.jpg" type="Texture" id=11]
 
 [sub_resource type="BoxShape" id=1]
 extents = Vector3( 0.675, 1.5, 0.1 )

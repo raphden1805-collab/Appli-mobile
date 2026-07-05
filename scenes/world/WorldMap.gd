@@ -1,21 +1,28 @@
 extends Reference
-# Single source of truth for world layout: the island is circular,
-# ringed by a sandy beach and then open ocean. World.gd (ground/water/
-# scattering) and Minimap.gd both call create_noise() with the same
-# world seed and get back an identical noise field, so the drawn map
+# Single source of truth for world layout: the island's coastline is an
+# irregular blob (bays/peninsulas via angular noise), ringed by a sandy
+# beach and then open ocean. World.gd (ground/water/scattering) and
+# Minimap.gd both call create_noise()/create_coast_noise() with the same
+# world seed and get back identical noise fields, so the drawn map
 # always matches the actual 3D world without needing to share object
 # references.
 
-# Gameplay land: desert/plains/snow biomes live inside this radius.
-const ISLAND_RADIUS := 170.0
+# Average island size and how wildly the coastline wobbles around it -
+# combined with COAST_VARIATION this produces real bays and peninsulas
+# instead of a perfect circle.
+const COAST_BASE_RADIUS := 150.0
+const COAST_VARIATION := 55.0
+const COAST_SAMPLE_RADIUS := 100.0
+const COAST_DETAIL_FREQ := 2.6
+
 # Sandy ring between the island and open water.
 const BEACH_WIDTH := 16.0
-# The detailed ground mesh extends a little past the beach so its edge
-# is always hidden underwater regardless of camera angle.
-const GROUND_MESH_RADIUS := ISLAND_RADIUS + BEACH_WIDTH + 4.0
+# The detailed ground mesh extends a little past the widest possible
+# coastline so its edge is always hidden underwater regardless of angle.
+const GROUND_MESH_RADIUS := COAST_BASE_RADIUS + COAST_VARIATION + BEACH_WIDTH + 6.0
 # Big open-water plane so the horizon is never visible from the island
-# (fog hides everything past ~180 units anyway).
-const WATER_SIZE := 700.0
+# (fog hides everything past ~280 units anyway).
+const WATER_SIZE := 900.0
 const WATER_LEVEL := -0.2
 # Slightly bigger than the ground mesh so the minimap shows a strip of
 # open water framing the island.
@@ -57,9 +64,35 @@ static func create_noise(world_seed: int) -> OpenSimplexNoise:
 	noise.persistence = NOISE_PERSISTENCE
 	return noise
 
+# Separate, decorrelated noise field just for the coastline shape (own
+# seed offset so it doesn't line up with the biome pattern).
+static func create_coast_noise(world_seed: int) -> OpenSimplexNoise:
+	var noise := OpenSimplexNoise.new()
+	noise.seed = world_seed + 91771
+	noise.period = 110.0
+	noise.octaves = 2
+	noise.persistence = 0.5
+	return noise
+
+# How far the coastline is from the origin at a given angle. Combines a
+# broad wobble with a finer one (sampled along a fixed circle and keyed
+# by angle) so the island gets both large bays and smaller detail.
+static func get_coast_radius(coast_noise: OpenSimplexNoise, angle: float) -> float:
+	var nx := cos(angle) * COAST_SAMPLE_RADIUS
+	var nz := sin(angle) * COAST_SAMPLE_RADIUS
+	var broad := coast_noise.get_noise_2d(nx, nz)
+	var detail := coast_noise.get_noise_2d(nx * COAST_DETAIL_FREQ + 500.0, nz * COAST_DETAIL_FREQ + 500.0)
+	var wobble := broad * 0.75 + detail * 0.25
+	return COAST_BASE_RADIUS + wobble * COAST_VARIATION
+
+static func _dist_and_coast(coast_noise: OpenSimplexNoise, x: float, z: float) -> Array:
+	var dist := Vector2(x, z).length()
+	var coast_r := get_coast_radius(coast_noise, atan2(z, x))
+	return [dist, coast_r]
+
 # Categorical biome for gameplay logic (scattering, POI placement). Only
-# meaningful on land - callers are expected to only sample within
-# ISLAND_RADIUS (see World.gd's circular _random_position).
+# meaningful on land - callers are expected to only sample within the
+# actual coastline (see World.gd's irregular-aware _random_position).
 static func get_biome(noise: OpenSimplexNoise, x: float, z: float) -> String:
 	if Vector2(x, z).length() < SPAWN_SAFE_RADIUS:
 		return BIOME_PLAINS
@@ -75,11 +108,13 @@ static func get_biome_color(noise: OpenSimplexNoise, x: float, z: float) -> Colo
 
 # Terrain color including the beach/ocean rings - used for the ground's
 # safety-net vertex colors and the minimap texture (not for gameplay).
-static func get_terrain_color(noise: OpenSimplexNoise, x: float, z: float) -> Color:
-	var dist := Vector2(x, z).length()
-	if dist > ISLAND_RADIUS + BEACH_WIDTH:
+static func get_terrain_color(noise: OpenSimplexNoise, coast_noise: OpenSimplexNoise, x: float, z: float) -> Color:
+	var dc := _dist_and_coast(coast_noise, x, z)
+	var dist: float = dc[0]
+	var coast_r: float = dc[1]
+	if dist > coast_r + BEACH_WIDTH:
 		return OCEAN_COLOR
-	if dist > ISLAND_RADIUS:
+	if dist > coast_r:
 		return BIOME_COLORS[BIOME_BEACH]
 	return get_biome_color(noise, x, z)
 
@@ -88,9 +123,11 @@ static func get_terrain_color(noise: OpenSimplexNoise, x: float, z: float) -> Co
 # thresholds so biome borders don't show a hard seam in the terrain
 # texture. Beach/ocean are treated as "desert" (sand) since they share
 # the same sand texture.
-static func get_biome_weights(noise: OpenSimplexNoise, x: float, z: float) -> Vector3:
-	var dist := Vector2(x, z).length()
-	if dist > ISLAND_RADIUS:
+static func get_biome_weights(noise: OpenSimplexNoise, coast_noise: OpenSimplexNoise, x: float, z: float) -> Vector3:
+	var dc := _dist_and_coast(coast_noise, x, z)
+	var dist: float = dc[0]
+	var coast_r: float = dc[1]
+	if dist > coast_r:
 		return Vector3(1, 0, 0)
 	if dist < SPAWN_SAFE_RADIUS:
 		return Vector3(0, 1, 0)

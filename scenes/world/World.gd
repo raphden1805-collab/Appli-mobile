@@ -44,10 +44,12 @@ onready var spawn_root: Spatial = $Spawns
 onready var ground: StaticBody = $Ground
 
 var noise: OpenSimplexNoise
+var coast_noise: OpenSimplexNoise
 var poi_list := [{"name": "Ruines de depart", "pos": Vector2(8, 8), "type": "ruins"}]
 
 func _ready() -> void:
 	noise = WorldMap.create_noise(GameManager.world_seed)
+	coast_noise = WorldMap.create_coast_noise(GameManager.world_seed)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = GameManager.world_seed
 	_build_ground_mesh()
@@ -77,10 +79,10 @@ func _build_ground_mesh() -> void:
 			var p10 := Vector3(x1, 0, z0)
 			var p01 := Vector3(x0, 0, z1)
 			var p11 := Vector3(x1, 0, z1)
-			var w00 := WorldMap.get_biome_weights(noise, x0, z0)
-			var w10 := WorldMap.get_biome_weights(noise, x1, z0)
-			var w01 := WorldMap.get_biome_weights(noise, x0, z1)
-			var w11 := WorldMap.get_biome_weights(noise, x1, z1)
+			var w00 := WorldMap.get_biome_weights(noise, coast_noise, x0, z0)
+			var w10 := WorldMap.get_biome_weights(noise, coast_noise, x1, z0)
+			var w01 := WorldMap.get_biome_weights(noise, coast_noise, x0, z1)
+			var w11 := WorldMap.get_biome_weights(noise, coast_noise, x1, z1)
 			_add_tri(st, p00, p10, p11, w00, w10, w11)
 			_add_tri(st, p00, p11, p01, w00, w11, w01)
 	st.generate_tangents()
@@ -93,15 +95,15 @@ func _build_ground_mesh() -> void:
 func _build_ground_material() -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	mat.shader = GROUND_SHADER
-	mat.set_shader_param("sand_albedo", load("res://assets/textures/sand/Color.png"))
-	mat.set_shader_param("sand_normal", load("res://assets/textures/sand/NormalGL.png"))
-	mat.set_shader_param("sand_roughness", load("res://assets/textures/sand/Roughness.png"))
-	mat.set_shader_param("grass_albedo", load("res://assets/textures/grass/Color.png"))
-	mat.set_shader_param("grass_normal", load("res://assets/textures/grass/NormalGL.png"))
-	mat.set_shader_param("grass_roughness", load("res://assets/textures/grass/Roughness.png"))
-	mat.set_shader_param("snow_albedo", load("res://assets/textures/snow/Color.png"))
-	mat.set_shader_param("snow_normal", load("res://assets/textures/snow/NormalGL.png"))
-	mat.set_shader_param("snow_roughness", load("res://assets/textures/snow/Roughness.png"))
+	mat.set_shader_param("sand_albedo", load("res://assets/textures/sand/Color.jpg"))
+	mat.set_shader_param("sand_normal", load("res://assets/textures/sand/NormalGL.jpg"))
+	mat.set_shader_param("sand_roughness", load("res://assets/textures/sand/Roughness.jpg"))
+	mat.set_shader_param("grass_albedo", load("res://assets/textures/grass/Color.jpg"))
+	mat.set_shader_param("grass_normal", load("res://assets/textures/grass/NormalGL.jpg"))
+	mat.set_shader_param("grass_roughness", load("res://assets/textures/grass/Roughness.jpg"))
+	mat.set_shader_param("snow_albedo", load("res://assets/textures/snow/Color.jpg"))
+	mat.set_shader_param("snow_normal", load("res://assets/textures/snow/NormalGL.jpg"))
+	mat.set_shader_param("snow_roughness", load("res://assets/textures/snow/Roughness.jpg"))
 	return mat
 
 func _add_tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, wa: Vector3, wb: Vector3, wc: Vector3) -> void:
@@ -127,7 +129,8 @@ func _build_water_mesh() -> void:
 	mesh_instance.transform.origin = Vector3(0, WorldMap.WATER_LEVEL, 0)
 	var mat := ShaderMaterial.new()
 	mat.shader = WATER_SHADER
-	mat.set_shader_param("coast_radius", WorldMap.ISLAND_RADIUS + WorldMap.BEACH_WIDTH)
+	mat.set_shader_param("coast_radius", WorldMap.COAST_BASE_RADIUS + WorldMap.BEACH_WIDTH)
+	mat.set_shader_param("fade_distance", WorldMap.COAST_VARIATION + 60.0)
 	mesh_instance.material_override = mat
 	add_child(mesh_instance)
 
@@ -229,15 +232,17 @@ func _find_mesh_instances(node: Node) -> Array:
 			result.append_array(_find_mesh_instances(child))
 	return result
 
-# Uniform-in-area sampling within the circular island (sqrt of a
-# uniform random radius avoids over-density near the center).
+# Uniform-in-area sampling within the island's irregular coastline:
+# picks a random angle, then a random radius up to that angle's actual
+# coast distance (sqrt of a uniform random fraction avoids over-density
+# near the center).
 func _random_position(rng: RandomNumberGenerator) -> Vector3:
-	while true:
-		var angle := rng.randf_range(0, TAU)
-		var r := sqrt(rng.randf()) * WorldMap.ISLAND_RADIUS
-		if r > MIN_SPAWN_DIST_FROM_CENTER:
-			return Vector3(cos(angle) * r, 0, sin(angle) * r)
-	return Vector3.ZERO
+	var angle := rng.randf_range(0, TAU)
+	var coast_r := WorldMap.get_coast_radius(coast_noise, angle)
+	var r := sqrt(rng.randf()) * max(coast_r - 1.0, MIN_SPAWN_DIST_FROM_CENTER)
+	if r <= MIN_SPAWN_DIST_FROM_CENTER:
+		r = MIN_SPAWN_DIST_FROM_CENTER + 1.0
+	return Vector3(cos(angle) * r, 0, sin(angle) * r)
 
 # Rejection-samples a random position until it lands in the requested
 # biome, or returns null if it couldn't find one within the attempt budget

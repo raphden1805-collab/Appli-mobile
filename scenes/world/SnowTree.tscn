@@ -1,9 +1,9 @@
 [gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://scenes/world/ResourceNode.gd" type="Script" id=1]
-[ext_resource path="res://assets/textures/bark/Color.png" type="Texture" id=2]
-[ext_resource path="res://assets/textures/bark/NormalGL.png" type="Texture" id=3]
-[ext_resource path="res://assets/textures/bark/Roughness.png" type="Texture" id=4]
+[ext_resource path="res://assets/textures/bark/Color.jpg" type="Texture" id=2]
+[ext_resource path="res://assets/textures/bark/NormalGL.jpg" type="Texture" id=3]
+[ext_resource path="res://assets/textures/bark/Roughness.jpg" type="Texture" id=4]
 
 [sub_resource type="CylinderShape" id=1]
 radius = 0.35
