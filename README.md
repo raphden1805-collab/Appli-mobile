@@ -22,12 +22,19 @@ Ce qui est jouable aujourd'hui :
   de glissement (visée caméra), boutons d'action (sauter, sprint,
   récolter/placer, interagir, construire) - en plus du clavier/souris
   pour tester depuis l'éditeur Godot
-- Monde divisé en 3 biomes (désert, plaine, neige) avec ressources et
-  décors adaptés (arbres/rochers reskinnés, cactus décoratifs)
-- Deux lieux abandonnés : un immeuble en ruine (désert) et une gare
-  abandonnée avec un wagon rouillé (neige), tous deux lootables
-- Carte complète en haut à droite du HUD (biomes, points d'intérêt,
-  position/orientation du joueur)
+- Monde de 360x360 avec biomes **générés aléatoirement** (bruit de
+  Perlin/Simplex, formes organiques) : désert, plaine, neige - le sol
+  est un seul mesh à couleurs de sommets (pas de bandes fixes), la zone
+  de spawn reste toujours en plaine quelle que soit la seed
+- Forêts denses regroupées dans les plaines (en plus d'arbres épars),
+  cactus décoratifs dans le désert
+- Points d'intérêt placés aléatoirement selon le biome : 2 villages
+  désertiques (huttes + caisses), 2 immeubles abandonnés et 2 gares
+  abandonnées (wagon rouillé) dans les zones enneigées, tous lootables
+- Minimap en haut à droite : image générée à partir du même bruit que
+  le monde réel (donc toujours exacte), icônes différentes par type de
+  point d'intérêt (carré = village, cercle = immeuble, losange = gare,
+  cercle jaune = ruines de départ), boussole "N", flèche joueur
 - Panneau d'inventaire dédié (touche I ou bouton "Sac") avec un slot par
   ressource, en plus du compteur rapide déjà affiché en haut à droite
 - Environnement amélioré : SSAO, glow, tonemapping filmique, feuillage
@@ -108,7 +115,8 @@ Apple :
 | Ouvrir/fermer l'inventaire | I |
 
 Sur mobile, les mêmes actions sont disponibles via le joystick, la zone
-de glissement et les boutons à l'écran.
+de glissement et des boutons à l'écran (affichés en texte simple, sans
+cadre, pour ne pas surcharger l'écran).
 
 ## Structure du projet
 

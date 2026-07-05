@@ -5,9 +5,11 @@ extends Spatial
 const PLAYER_SCENE := preload("res://scenes/player/Player.tscn")
 
 onready var hud = $HUD
+onready var world = $World
 
 func _ready() -> void:
 	var player = PLAYER_SCENE.instance()
 	add_child(player)
 	player.transform.origin = Vector3(0, 1.2, 0)
 	hud.set_player(player)
+	hud.minimap.set_poi_list(world.poi_list)

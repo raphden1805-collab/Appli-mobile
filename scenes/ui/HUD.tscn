@@ -98,12 +98,22 @@ margin_bottom = 64.0
 [node name="NextButton" type="Button" parent="BuildPanel/PieceButtons"]
 margin_right = 150.0
 margin_bottom = 40.0
+flat = true
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0.85 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
 text = "Piece suivante"
 
 [node name="RotateButton" type="Button" parent="BuildPanel/PieceButtons"]
 margin_left = 154.0
 margin_right = 304.0
 margin_bottom = 40.0
+flat = true
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0.85 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
 text = "Rotation"
 
 [node name="Controls" type="Control" parent="."]
@@ -130,6 +140,11 @@ anchor_left = 0.86
 anchor_top = 0.64
 anchor_right = 0.98
 anchor_bottom = 0.76
+flat = true
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0.85 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
 text = "Sauter"
 
 [node name="SprintButton" type="Button" parent="Controls"]
@@ -137,6 +152,11 @@ anchor_left = 0.72
 anchor_top = 0.66
 anchor_right = 0.85
 anchor_bottom = 0.76
+flat = true
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0.85 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
 text = "Sprint"
 
 [node name="InteractButton" type="Button" parent="Controls"]
@@ -144,6 +164,11 @@ anchor_left = 0.72
 anchor_top = 0.80
 anchor_right = 0.85
 anchor_bottom = 0.90
+flat = true
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0.85 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
 text = "Interagir"
 
 [node name="HarvestButton" type="Button" parent="Controls"]
@@ -151,6 +176,11 @@ anchor_left = 0.86
 anchor_top = 0.78
 anchor_right = 0.99
 anchor_bottom = 0.90
+flat = true
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0.85 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
 text = "Recolter"
 
 [node name="BuildToggleButton" type="Button" parent="Controls"]
@@ -159,6 +189,11 @@ anchor_top = 0.92
 anchor_right = 0.99
 anchor_bottom = 1.0
 toggle_mode = true
+flat = true
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0.85 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
 text = "Construire"
 
 [node name="InventoryButton" type="Button" parent="Controls"]
@@ -166,6 +201,11 @@ anchor_left = 0.03
 anchor_top = 0.58
 anchor_right = 0.16
 anchor_bottom = 0.66
+flat = true
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0.85 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
 text = "Sac"
 
 [node name="InventoryPanel" type="Control" parent="."]
@@ -204,6 +244,11 @@ text = "Inventaire"
 columns = 3
 
 [node name="CloseButton" type="Button" parent="InventoryPanel/Panel/Margin/VBox"]
+flat = true
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0.85 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
 text = "Fermer"
 
 [connection signal="pressed" from="InventoryPanel/Panel/Margin/VBox/CloseButton" to="InventoryPanel" method="_on_close_pressed"]

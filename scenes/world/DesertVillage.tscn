@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://scenes/world/DesertHut.tscn" type="PackedScene" id=1]
+[ext_resource path="res://scenes/world/LootCrate.tscn" type="PackedScene" id=2]
+
+[node name="DesertVillage" type="Spatial"]
+
+[node name="HutA" parent="." instance=ExtResource( 1 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 0 )
+
+[node name="HutB" parent="." instance=ExtResource( 1 )]
+transform = Transform( -0.4480736, 0, 0.8939967, 0, 1, 0, -0.8939967, 0, -0.4480736, 4.5, 0, -1.5 )
+
+[node name="Crate1" parent="." instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.5 )
+
+[node name="Crate2" parent="." instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 3 )

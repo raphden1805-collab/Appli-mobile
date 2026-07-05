@@ -1,10 +1,10 @@
 extends Spatial
-# Scatters biome-appropriate resource nodes and loot crates across the
-# map on load, and paints the ground in three bands (desert / plaine /
-# neige) matching WorldMap - the same source Minimap.gd reads to draw
-# the corner map. Uses a fixed seed (GameManager.world_seed) so the
-# layout is reproducible run to run while the prototype has no save
-# system yet.
+# Builds the whole map on load: a single vertex-colored ground mesh and
+# biome-aware scattering, both driven by the same OpenSimplexNoise field
+# (see WorldMap.gd) so the ground colors, the scattered resources and
+# the minimap always agree on where the desert/plains/snow are. Uses a
+# fixed seed (GameManager.world_seed) so the layout is reproducible run
+# to run while the prototype has no save system yet.
 
 const WorldMap := preload("res://scenes/world/WorldMap.gd")
 
@@ -16,60 +16,118 @@ const DESERT_ROCK_SCENE := preload("res://scenes/world/DesertRock.tscn")
 const ORE_SCENE := preload("res://scenes/world/MetalOre.tscn")
 const CACTUS_SCENE := preload("res://scenes/world/Cactus.tscn")
 const CRATE_SCENE := preload("res://scenes/world/LootCrate.tscn")
+const DESERT_VILLAGE_SCENE := preload("res://scenes/world/DesertVillage.tscn")
+const ABANDONED_BUILDING_SCENE := preload("res://scenes/world/AbandonedBuilding.tscn")
+const ABANDONED_STATION_SCENE := preload("res://scenes/world/AbandonedStation.tscn")
 
-const VEGETATION_COUNT := 70
-const ROCK_COUNT := 45
-const ORE_COUNT := 15
-const CRATE_COUNT := 8
-const CACTUS_COUNT := 20
+const GROUND_RESOLUTION := 72
+
+const VEGETATION_COUNT := 100
+const FOREST_CLUSTERS := 8
+const TREES_PER_FOREST := 22
+const FOREST_RADIUS := 22.0
+const ROCK_COUNT := 150
+const ORE_COUNT := 50
+const CRATE_COUNT := 24
+const CACTUS_COUNT := 80
+const DESERT_VILLAGE_COUNT := 2
+const SNOW_BUILDING_COUNT := 2
+const SNOW_STATION_COUNT := 2
 const MIN_SPAWN_DIST_FROM_CENTER := 8.0
+const MAX_PLACEMENT_ATTEMPTS := 250
 
 onready var spawn_root: Spatial = $Spawns
 onready var ground: StaticBody = $Ground
 
+var noise: OpenSimplexNoise
+var poi_list := [{"name": "Ruines de depart", "pos": Vector2(8, 8), "type": "ruins"}]
+
 func _ready() -> void:
-	_build_ground_bands()
+	noise = WorldMap.create_noise(GameManager.world_seed)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = GameManager.world_seed
+	_build_ground_mesh()
+	_scatter_forests(rng)
 	_scatter_vegetation(rng)
 	_scatter_rocks(rng)
 	_scatter(ORE_SCENE, ORE_COUNT, rng)
 	_scatter(CRATE_SCENE, CRATE_COUNT, rng)
 	_scatter_cacti(rng)
+	_place_pois(rng)
 
-func _build_ground_bands() -> void:
-	var bands := [
-		{"biome": WorldMap.BIOME_DESERT, "x_min": -WorldMap.WORLD_HALF_SIZE, "x_max": WorldMap.DESERT_MAX_X},
-		{"biome": WorldMap.BIOME_PLAINS, "x_min": WorldMap.DESERT_MAX_X, "x_max": WorldMap.SNOW_MIN_X},
-		{"biome": WorldMap.BIOME_SNOW, "x_min": WorldMap.SNOW_MIN_X, "x_max": WorldMap.WORLD_HALF_SIZE},
-	]
-	for band in bands:
-		var width: float = band["x_max"] - band["x_min"]
-		var center_x: float = (band["x_max"] + band["x_min"]) / 2.0
-		var mesh_instance := MeshInstance.new()
-		var plane := PlaneMesh.new()
-		plane.size = Vector2(width, WorldMap.WORLD_HALF_SIZE * 2.0)
-		mesh_instance.mesh = plane
-		var mat := SpatialMaterial.new()
-		mat.albedo_color = WorldMap.BIOME_COLORS[band["biome"]]
-		mat.roughness = 1.0
-		mesh_instance.material_override = mat
-		mesh_instance.transform.origin = Vector3(center_x, 0, 0)
-		ground.add_child(mesh_instance)
+# --- Ground -----------------------------------------------------------
+
+func _build_ground_mesh() -> void:
+	var half := WorldMap.WORLD_HALF_SIZE
+	var step := (half * 2.0) / GROUND_RESOLUTION
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for zi in range(GROUND_RESOLUTION):
+		var z0 := -half + zi * step
+		var z1 := z0 + step
+		for xi in range(GROUND_RESOLUTION):
+			var x0 := -half + xi * step
+			var x1 := x0 + step
+			var p00 := Vector3(x0, 0, z0)
+			var p10 := Vector3(x1, 0, z0)
+			var p01 := Vector3(x0, 0, z1)
+			var p11 := Vector3(x1, 0, z1)
+			var c00 := WorldMap.get_biome_color(noise, x0, z0)
+			var c10 := WorldMap.get_biome_color(noise, x1, z0)
+			var c01 := WorldMap.get_biome_color(noise, x0, z1)
+			var c11 := WorldMap.get_biome_color(noise, x1, z1)
+			_add_tri(st, p00, p10, p11, c00, c10, c11)
+			_add_tri(st, p00, p11, p01, c00, c11, c01)
+	var mesh_data := st.commit()
+	var mesh_instance := MeshInstance.new()
+	mesh_instance.mesh = mesh_data
+	var mat := SpatialMaterial.new()
+	mat.vertex_color_use_as_albedo = true
+	mat.roughness = 1.0
+	mat.params_cull_mode = SpatialMaterial.CULL_DISABLED
+	mesh_instance.material_override = mat
+	ground.add_child(mesh_instance)
+
+func _add_tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, ca: Color, cb: Color, cc: Color) -> void:
+	st.add_color(ca)
+	st.add_normal(Vector3.UP)
+	st.add_vertex(a)
+	st.add_color(cb)
+	st.add_normal(Vector3.UP)
+	st.add_vertex(b)
+	st.add_color(cc)
+	st.add_normal(Vector3.UP)
+	st.add_vertex(c)
+
+# --- Scattering ---------------------------------------------------------
 
 func _scatter_vegetation(rng: RandomNumberGenerator) -> void:
 	for i in range(VEGETATION_COUNT):
 		var pos := _random_position(rng)
-		var biome := WorldMap.get_biome(pos.x)
+		var biome := WorldMap.get_biome(noise, pos.x, pos.z)
 		if biome == WorldMap.BIOME_DESERT:
 			continue
 		var scene: PackedScene = SNOW_TREE_SCENE if biome == WorldMap.BIOME_SNOW else TREE_SCENE
 		_spawn(scene, pos, rng)
 
+func _scatter_forests(rng: RandomNumberGenerator) -> void:
+	for i in range(FOREST_CLUSTERS):
+		var center = _random_biome_position(rng, WorldMap.BIOME_PLAINS)
+		if center == null:
+			continue
+		for j in range(TREES_PER_FOREST):
+			var pos: Vector3 = center + Vector3(
+				rng.randf_range(-FOREST_RADIUS, FOREST_RADIUS), 0,
+				rng.randf_range(-FOREST_RADIUS, FOREST_RADIUS)
+			)
+			if WorldMap.get_biome(noise, pos.x, pos.z) != WorldMap.BIOME_PLAINS:
+				continue
+			_spawn(TREE_SCENE, pos, rng)
+
 func _scatter_rocks(rng: RandomNumberGenerator) -> void:
 	for i in range(ROCK_COUNT):
 		var pos := _random_position(rng)
-		var biome := WorldMap.get_biome(pos.x)
+		var biome := WorldMap.get_biome(noise, pos.x, pos.z)
 		var scene: PackedScene = ROCK_SCENE
 		if biome == WorldMap.BIOME_SNOW:
 			scene = SNOW_ROCK_SCENE
@@ -79,16 +137,35 @@ func _scatter_rocks(rng: RandomNumberGenerator) -> void:
 
 func _scatter_cacti(rng: RandomNumberGenerator) -> void:
 	for i in range(CACTUS_COUNT):
-		var pos := Vector3(
-			rng.randf_range(-WorldMap.WORLD_HALF_SIZE, WorldMap.DESERT_MAX_X),
-			0,
-			rng.randf_range(-WorldMap.WORLD_HALF_SIZE, WorldMap.WORLD_HALF_SIZE)
-		)
-		_spawn(CACTUS_SCENE, pos, rng)
+		var pos = _random_biome_position(rng, WorldMap.BIOME_DESERT)
+		if pos != null:
+			_spawn(CACTUS_SCENE, pos, rng)
 
 func _scatter(scene: PackedScene, count: int, rng: RandomNumberGenerator) -> void:
 	for i in range(count):
 		_spawn(scene, _random_position(rng), rng)
+
+# --- Points of interest --------------------------------------------------
+
+func _place_pois(rng: RandomNumberGenerator) -> void:
+	for i in range(DESERT_VILLAGE_COUNT):
+		_place_poi(DESERT_VILLAGE_SCENE, WorldMap.BIOME_DESERT, "Village desertique", "village", rng)
+	for i in range(SNOW_BUILDING_COUNT):
+		_place_poi(ABANDONED_BUILDING_SCENE, WorldMap.BIOME_SNOW, "Immeuble abandonne", "building", rng)
+	for i in range(SNOW_STATION_COUNT):
+		_place_poi(ABANDONED_STATION_SCENE, WorldMap.BIOME_SNOW, "Gare abandonnee", "station", rng)
+
+func _place_poi(scene: PackedScene, biome: String, label: String, poi_type: String, rng: RandomNumberGenerator) -> void:
+	var pos = _random_biome_position(rng, biome)
+	if pos == null:
+		return
+	var instance = scene.instance()
+	spawn_root.add_child(instance)
+	instance.transform.origin = pos
+	instance.rotation.y = rng.randf_range(0, TAU)
+	poi_list.append({"name": label, "pos": Vector2(pos.x, pos.z), "type": poi_type})
+
+# --- Helpers --------------------------------------------------------------
 
 func _spawn(scene: PackedScene, pos: Vector3, rng: RandomNumberGenerator) -> void:
 	var instance = scene.instance()
@@ -131,3 +208,13 @@ func _random_position(rng: RandomNumberGenerator) -> Vector3:
 		if pos.length() > MIN_SPAWN_DIST_FROM_CENTER:
 			break
 	return pos
+
+# Rejection-samples a random position until it lands in the requested
+# biome, or returns null if it couldn't find one within the attempt budget
+# (can happen with an unlucky seed where a biome barely exists).
+func _random_biome_position(rng: RandomNumberGenerator, biome: String):
+	for i in range(MAX_PLACEMENT_ATTEMPTS):
+		var pos := _random_position(rng)
+		if WorldMap.get_biome(noise, pos.x, pos.z) == biome:
+			return pos
+	return null
