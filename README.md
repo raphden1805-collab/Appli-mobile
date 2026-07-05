@@ -32,17 +32,26 @@ Ce qui est jouable aujourd'hui :
 - Forêts denses regroupées dans les plaines (en plus d'arbres épars),
   cactus décoratifs dans le désert
 - Points d'intérêt placés aléatoirement selon le biome : 3 villages
-  désertiques (huttes + caisses), 3 immeubles abandonnés, 3 gares
-  abandonnées (wagon rouillé) dans les zones enneigées, et 2 **stations
-  de métro abandonnées** (aussi en zone enneigée) - un vrai escalier
-  descend depuis un kiosque de surface (auvent, piliers, panneau) dans
-  une fosse en béton scellée, puis fait basculer le joueur (touche
-  interagir, comme une caisse ou une porte) vers un quai souterrain
-  séparé avec rails, wagon rouillé, caisses et éclairage tamisé - et un
-  second escalier pour remonter ; le monde n'a pas de collision de
-  terrain "trouable", donc les deux moitiés sont reliées par téléportation
-  plutôt que par un vrai trou traversable, tous les autres points
-  d'intérêt sont lootables
+  désertiques (huttes + caisses), 3 immeubles abandonnés et 3 gares
+  abandonnées (wagon rouillé) dans les zones enneigées, tous lootables
+- **Réseau de métro souterrain connecté** (3 stations, zone enneigée) :
+  chaque station a un kiosque de surface (auvent, piliers, panneau,
+  escalier réel qui descend dans une fosse en béton) relié - via
+  téléportation au pied de l'escalier (touche interagir, comme une
+  caisse ou une porte ; le monde n'a pas de collision de terrain
+  "trouable", donc c'est la seule façon de passer du niveau du sol au
+  sous-sol) - à un quai séparé loin sous la carte. Contrairement aux
+  versions précédentes (stations isolées), les quais sont maintenant
+  raccordés entre eux par un vrai réseau de tunnels voûtés (section en
+  fer à cheval, pas des couloirs carrés) avec nervures de soutènement et
+  éclairage périodique, et une **rame automatique** (deux wagons +
+  phare) circule en boucle d'un bout à l'autre du réseau - du vrai trafic
+  souterrain sous la carte plutôt que des salles isolées
+- Minimap en haut à droite : image générée à partir du même bruit que
+  le monde réel (donc toujours exacte), icônes différentes par type de
+  point d'intérêt (carré = village, cercle = immeuble, losange = gare,
+  triangle turquoise = métro, cercle jaune = ruines de départ), boussole
+  "N", flèche joueur
 - Minimap en haut à droite : image générée à partir du même bruit que
   le monde réel (donc toujours exacte), icônes différentes par type de
   point d'intérêt (carré = village, cercle = immeuble, losange = gare,

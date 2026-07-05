@@ -24,6 +24,7 @@ const DESERT_VILLAGE_SCENE := preload("res://scenes/world/DesertVillage.tscn")
 const ABANDONED_BUILDING_SCENE := preload("res://scenes/world/AbandonedBuilding.tscn")
 const ABANDONED_STATION_SCENE := preload("res://scenes/world/AbandonedStation.tscn")
 const ABANDONED_METRO_SCENE := preload("res://scenes/world/AbandonedMetro.tscn")
+const METRO_NETWORK_SCRIPT := preload("res://scenes/world/MetroNetwork.gd")
 
 const GROUND_RESOLUTION := 160
 const WATER_RESOLUTION := 130
@@ -39,7 +40,7 @@ const CACTUS_COUNT := 160
 const DESERT_VILLAGE_COUNT := 3
 const SNOW_BUILDING_COUNT := 3
 const SNOW_STATION_COUNT := 3
-const SNOW_METRO_COUNT := 2
+const SNOW_METRO_COUNT := 3
 const MIN_SPAWN_DIST_FROM_CENTER := 8.0
 const MAX_PLACEMENT_ATTEMPTS := 250
 const GRASS_COUNT := 34000
@@ -73,6 +74,7 @@ func _ready() -> void:
 	_scatter(CRATE_SCENE, CRATE_COUNT, rng)
 	_scatter_cacti(rng)
 	_place_pois(rng, metro_positions)
+	_build_metro_network(metro_positions)
 
 # --- Ground -----------------------------------------------------------
 
@@ -320,8 +322,31 @@ func _place_metro(pos2: Vector2, rng: RandomNumberGenerator) -> void:
 	var instance = ABANDONED_METRO_SCENE.instance()
 	spawn_root.add_child(instance)
 	instance.transform.origin = Vector3(pos2.x, 0, pos2.y)
-	instance.rotation.y = rng.randf_range(0, TAU)
+	# The surface kiosk can face any direction, but the underground
+	# platform room needs to stay world-axis-aligned so MetroNetwork can
+	# connect straight tunnels to it - cancel the kiosk's rotation locally
+	# on the Underground node (its (0,-40,0) offset is unaffected by a
+	# pure Y rotation, only its children's orientation is).
+	var yaw := rng.randf_range(0, TAU)
+	instance.rotation.y = yaw
+	instance.get_node("Underground").rotation.y = -yaw
 	poi_list.append({"name": "Metro abandonne", "pos": pos2, "type": "metro"})
+
+# Chains every metro station's platform room into one tunnel network
+# (see MetroNetwork.gd), ordered by X so each connection is a simple
+# straight-ish run rather than crossing back and forth across the map.
+func _build_metro_network(metro_positions: Array) -> void:
+	if metro_positions.empty():
+		return
+	var ordered: Array = metro_positions.duplicate()
+	ordered.sort_custom(self, "_sort_by_x")
+	var network := Spatial.new()
+	network.set_script(METRO_NETWORK_SCRIPT)
+	add_child(network)
+	network.build(ordered)
+
+func _sort_by_x(a: Vector2, b: Vector2) -> bool:
+	return a.x < b.x
 
 # --- Helpers --------------------------------------------------------------
 
