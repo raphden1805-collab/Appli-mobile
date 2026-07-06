@@ -38,12 +38,20 @@ const CONCRETE_ROUGH := preload("res://assets/textures/concrete/Roughness.jpg")
 const METAL_COLOR := preload("res://assets/textures/metal/Color.jpg")
 const METAL_NORMAL := preload("res://assets/textures/metal/NormalGL.jpg")
 const METAL_ROUGH := preload("res://assets/textures/metal/Roughness.jpg")
+const WOOD_COLOR := preload("res://assets/textures/wood/Color.jpg")
+const WOOD_NORMAL := preload("res://assets/textures/wood/NormalGL.jpg")
+const WOOD_ROUGH := preload("res://assets/textures/wood/Roughness.jpg")
 const TRAIN_SCRIPT := preload("res://scenes/world/MetroTrain.gd")
+
+const TIE_EVERY := 1.4
+const PIPE_EVERY := 3
 
 var tunnel_mat: SpatialMaterial
 var rib_mat: SpatialMaterial
 var rail_mat: SpatialMaterial
 var rust_mat: SpatialMaterial
+var tie_mat: SpatialMaterial
+var pipe_mat: SpatialMaterial
 var _sort_hub := Vector2.ZERO
 
 func build(station_positions: Array) -> void:
@@ -142,6 +150,23 @@ func _init_materials() -> void:
 	rust_mat.normal_texture = METAL_NORMAL
 	rust_mat.uv1_scale = Vector3(2, 1, 1)
 
+	tie_mat = SpatialMaterial.new()
+	tie_mat.albedo_color = Color(0.22, 0.16, 0.12)
+	tie_mat.albedo_texture = WOOD_COLOR
+	tie_mat.roughness = 0.95
+	tie_mat.roughness_texture = WOOD_ROUGH
+	tie_mat.normal_enabled = true
+	tie_mat.normal_texture = WOOD_NORMAL
+
+	pipe_mat = SpatialMaterial.new()
+	pipe_mat.albedo_color = Color(0.35, 0.16, 0.12)
+	pipe_mat.albedo_texture = METAL_COLOR
+	pipe_mat.metallic = 0.5
+	pipe_mat.roughness = 0.6
+	pipe_mat.roughness_texture = METAL_ROUGH
+	pipe_mat.normal_enabled = true
+	pipe_mat.normal_texture = METAL_NORMAL
+
 # Rounded horseshoe cross-section (floor-left up the wall, over the arch,
 # back down to floor-right) - reads as a real tunnel bore instead of a box.
 func _arch_profile() -> Array:
@@ -226,11 +251,12 @@ func _build_straight(from2: Vector2, to2: Vector2) -> void:
 	root.add_child(mesh_instance)
 
 	_add_tunnel_floor(root, length)
+	_add_pipes(root, length)
 
 	for i in range(segments + 1):
 		var z := -i * seg_len
 		if i % RIB_EVERY == 0:
-			_add_rib(root, z)
+			_add_truss(root, z)
 		if i % LIGHT_EVERY == 0:
 			_add_light(root, z)
 
@@ -258,18 +284,54 @@ func _extrude_ring(st: SurfaceTool, profile: Array, z0: float, z1: float) -> voi
 
 func _add_tunnel_floor(root: Spatial, length: float) -> void:
 	_make_box(Vector3(0, -0.1, -length * 0.5), Vector3(TUNNEL_HALF_WIDTH * 2.0, 0.2, length), tunnel_mat, root)
+	var tie_count := max(1, int(length / TIE_EVERY))
+	for i in range(tie_count):
+		var z := -i * (length / tie_count) - 0.3
+		_make_box(Vector3(0, 0.03, z), Vector3(TUNNEL_HALF_WIDTH * 1.4, 0.16, 0.35), tie_mat, root)
 	for side in [-2.4, 2.4]:
-		_make_box(Vector3(side, 0.05, -length * 0.5), Vector3(0.15, 0.1, length), rail_mat, root)
+		_make_box(Vector3(side, 0.12, -length * 0.5), Vector3(0.15, 0.1, length), rail_mat, root)
 
-func _add_rib(root: Spatial, z: float) -> void:
+# A real rusted steel truss (two posts + a top crossbeam + a diagonal
+# brace) instead of a bare post - the dominant structural motif in real
+# industrial subway tunnels.
+func _add_truss(root: Spatial, z: float) -> void:
 	for side in [-1.0, 1.0]:
-		_make_box(Vector3(side * (TUNNEL_HALF_WIDTH + 0.15), TUNNEL_WALL_HEIGHT * 0.5, z), Vector3(0.2, TUNNEL_WALL_HEIGHT, 0.3), rib_mat, root)
+		_make_box(Vector3(side * (TUNNEL_HALF_WIDTH + 0.15), TUNNEL_WALL_HEIGHT * 0.5, z), Vector3(0.25, TUNNEL_WALL_HEIGHT, 0.3), rust_mat, root)
+	_make_box(Vector3(0, TUNNEL_WALL_HEIGHT - 0.15, z), Vector3((TUNNEL_HALF_WIDTH + 0.15) * 2.0, 0.3, 0.3), rust_mat, root)
+	var brace := StaticBody.new()
+	var brace_len := sqrt(pow(TUNNEL_HALF_WIDTH, 2) + pow(TUNNEL_WALL_HEIGHT, 2))
+	var cube := CubeMesh.new()
+	cube.size = Vector3(0.15, brace_len, 0.2)
+	var mesh_instance := MeshInstance.new()
+	mesh_instance.mesh = cube
+	mesh_instance.material_override = rust_mat
+	brace.add_child(mesh_instance)
+	brace.transform.origin = Vector3(0, TUNNEL_WALL_HEIGHT * 0.5, z)
+	brace.rotation.z = atan2(TUNNEL_HALF_WIDTH, TUNNEL_WALL_HEIGHT)
+	root.add_child(brace)
+
+func _add_pipes(root: Spatial, length: float) -> void:
+	for i in range(PIPE_EVERY):
+		var y := TUNNEL_WALL_HEIGHT * 0.3 + i * (TUNNEL_WALL_HEIGHT * 0.35)
+		var pipe := StaticBody.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.18
+		cyl.bottom_radius = 0.18
+		cyl.height = length
+		var mesh_instance := MeshInstance.new()
+		mesh_instance.mesh = cyl
+		mesh_instance.material_override = pipe_mat
+		pipe.add_child(mesh_instance)
+		pipe.transform.origin = Vector3(-(TUNNEL_HALF_WIDTH - 0.3), y, -length * 0.5)
+		pipe.rotation.x = PI / 2.0
+		root.add_child(pipe)
 
 func _add_light(root: Spatial, z: float) -> void:
+	_make_box(Vector3(0, TUNNEL_ARCH_HEIGHT - 0.85, z), Vector3(1.2, 0.15, 0.4), rib_mat, root)
 	var light := OmniLight.new()
-	light.transform.origin = Vector3(0, TUNNEL_ARCH_HEIGHT - 0.9, z)
-	light.light_color = Color(0.85, 0.75, 0.55)
-	light.light_energy = 0.7
+	light.transform.origin = Vector3(0, TUNNEL_ARCH_HEIGHT - 0.95, z)
+	light.light_color = Color(0.75, 0.85, 1.0)
+	light.light_energy = 0.8
 	light.omni_range = 18.0
 	root.add_child(light)
 

@@ -31,6 +31,11 @@ const CONCRETE_ROUGH := preload("res://assets/textures/concrete/Roughness.jpg")
 const METAL_COLOR := preload("res://assets/textures/metal/Color.jpg")
 const METAL_NORMAL := preload("res://assets/textures/metal/NormalGL.jpg")
 const METAL_ROUGH := preload("res://assets/textures/metal/Roughness.jpg")
+const WOOD_COLOR := preload("res://assets/textures/wood/Color.jpg")
+const WOOD_NORMAL := preload("res://assets/textures/wood/NormalGL.jpg")
+const WOOD_ROUGH := preload("res://assets/textures/wood/Roughness.jpg")
+
+const TIE_EVERY := 1.4
 
 onready var down_stairs_root: Spatial = $DownStairs
 onready var up_stairs_root: Spatial = $Underground/UpStairs
@@ -39,6 +44,10 @@ onready var underground_root: Spatial = $Underground
 var _concrete_mat: SpatialMaterial
 var _platform_mat: SpatialMaterial
 var _rail_mat: SpatialMaterial
+var _tie_mat: SpatialMaterial
+var _rust_mat: SpatialMaterial
+var _pipe_mat: SpatialMaterial
+var _tarp_mat: SpatialMaterial
 
 func _ready() -> void:
 	_init_materials()
@@ -72,6 +81,36 @@ func _init_materials() -> void:
 	_rail_mat.normal_enabled = true
 	_rail_mat.normal_texture = METAL_NORMAL
 
+	_tie_mat = SpatialMaterial.new()
+	_tie_mat.albedo_color = Color(0.22, 0.16, 0.12)
+	_tie_mat.albedo_texture = WOOD_COLOR
+	_tie_mat.roughness = 0.95
+	_tie_mat.roughness_texture = WOOD_ROUGH
+	_tie_mat.normal_enabled = true
+	_tie_mat.normal_texture = WOOD_NORMAL
+
+	_rust_mat = SpatialMaterial.new()
+	_rust_mat.albedo_color = Color(0.5, 0.32, 0.22)
+	_rust_mat.albedo_texture = METAL_COLOR
+	_rust_mat.metallic = 0.3
+	_rust_mat.roughness = 0.8
+	_rust_mat.roughness_texture = METAL_ROUGH
+	_rust_mat.normal_enabled = true
+	_rust_mat.normal_texture = METAL_NORMAL
+
+	_pipe_mat = SpatialMaterial.new()
+	_pipe_mat.albedo_color = Color(0.35, 0.16, 0.12)
+	_pipe_mat.albedo_texture = METAL_COLOR
+	_pipe_mat.metallic = 0.5
+	_pipe_mat.roughness = 0.6
+	_pipe_mat.roughness_texture = METAL_ROUGH
+	_pipe_mat.normal_enabled = true
+	_pipe_mat.normal_texture = METAL_NORMAL
+
+	_tarp_mat = SpatialMaterial.new()
+	_tarp_mat.albedo_color = Color(0.14, 0.18, 0.13)
+	_tarp_mat.roughness = 0.85
+
 # direction -1 = each step lower than the last (surface entrance
 # descending into the pit), +1 = each step higher (underground side
 # climbing back towards the sealed exit).
@@ -92,9 +131,71 @@ func _build_room() -> void:
 	for side in [-1.0, 1.0]:
 		_make_box(underground_root, Vector3(side * (ROOM_HALF_WIDTH + 0.3), ROOM_HEIGHT * 0.5, 0), Vector3(0.2, ROOM_HEIGHT, ROOM_HALF_LENGTH * 2.0), _concrete_mat)
 		_make_box(underground_root, Vector3(side * (TRACK_HALF_WIDTH + PLATFORM_WIDTH * 0.5), PLATFORM_HEIGHT * 0.5, 0), Vector3(PLATFORM_WIDTH, PLATFORM_HEIGHT, ROOM_HALF_LENGTH * 2.0), _platform_mat)
-		_make_box(underground_root, Vector3(2.4 * side, 0.05, 0), Vector3(0.15, 0.1, ROOM_HALF_LENGTH * 2.0), _rail_mat)
+		_make_box(underground_root, Vector3(2.4 * side, 0.12, 0), Vector3(0.15, 0.1, ROOM_HALF_LENGTH * 2.0), _rail_mat)
 		for z_end in [-ROOM_HALF_LENGTH, ROOM_HALF_LENGTH]:
 			_make_box(underground_root, Vector3(side * (TRACK_HALF_WIDTH + PLATFORM_WIDTH * 0.5), ROOM_HEIGHT * 0.5, z_end), Vector3(PLATFORM_WIDTH, ROOM_HEIGHT, 0.2), _concrete_mat)
+
+	var tie_count := int(ROOM_HALF_LENGTH * 2.0 / TIE_EVERY)
+	for i in range(tie_count):
+		var z := -ROOM_HALF_LENGTH + i * TIE_EVERY + 0.3
+		_make_box(underground_root, Vector3(0, 0.03, z), Vector3(TRACK_HALF_WIDTH * 1.4, 0.16, 0.35), _tie_mat)
+
+	_build_trusses()
+	_build_pipes()
+	_build_fixture_lights()
+	_build_clutter()
+
+# Rusted steel trusses along the platform edge - the dominant structural
+# motif in real industrial subway stations - instead of bare concrete.
+func _build_trusses() -> void:
+	var truss_height := ROOM_HEIGHT
+	for z in [-6.0, 0.0, 6.0]:
+		for side in [-1.0, 1.0]:
+			var x = side * (ROOM_HALF_WIDTH - 0.2)
+			_make_box(underground_root, Vector3(x, truss_height * 0.5, z), Vector3(0.3, truss_height, 0.3), _rust_mat)
+			_make_box(underground_root, Vector3(x - side * 0.7, truss_height - 0.2, z), Vector3(1.4, 0.3, 0.3), _rust_mat)
+
+func _build_pipes() -> void:
+	for side in [-1.0, 1.0]:
+		var pipe := StaticBody.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.2
+		cyl.bottom_radius = 0.2
+		cyl.height = ROOM_HALF_LENGTH * 2.0
+		var mesh_instance := MeshInstance.new()
+		mesh_instance.mesh = cyl
+		mesh_instance.material_override = _pipe_mat
+		pipe.add_child(mesh_instance)
+		pipe.transform.origin = Vector3(side * (ROOM_HALF_WIDTH - 0.5), ROOM_HEIGHT - 1.0, 0)
+		pipe.rotation.x = PI / 2.0
+		underground_root.add_child(pipe)
+
+func _build_fixture_lights() -> void:
+	for z in [-5.0, 4.0]:
+		_make_box(underground_root, Vector3(0, ROOM_HEIGHT - 0.3, z), Vector3(1.4, 0.15, 0.4), _rust_mat)
+
+# A few extra scattered props (barrel, tarp-covered pile) beyond the
+# existing loot crates, for the cluttered-abandoned-station look.
+func _build_clutter() -> void:
+	var barrel := StaticBody.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.5
+	cyl.bottom_radius = 0.5
+	cyl.height = 1.1
+	var barrel_shape := CylinderShape.new()
+	barrel_shape.radius = 0.5
+	barrel_shape.height = 1.1
+	var shape := CollisionShape.new()
+	shape.shape = barrel_shape
+	barrel.add_child(shape)
+	var mesh_instance := MeshInstance.new()
+	mesh_instance.mesh = cyl
+	mesh_instance.material_override = _rust_mat
+	barrel.add_child(mesh_instance)
+	barrel.transform.origin = Vector3(TRACK_HALF_WIDTH + 1.8, PLATFORM_HEIGHT + 0.6, -7.0)
+	underground_root.add_child(barrel)
+
+	_make_box(underground_root, Vector3(-(TRACK_HALF_WIDTH + 1.8), PLATFORM_HEIGHT + 0.25, 6.5), Vector3(2.2, 0.5, 1.6), _tarp_mat)
 
 func _make_box(parent: Spatial, center: Vector3, size: Vector3, mat: SpatialMaterial) -> void:
 	var body := StaticBody.new()
