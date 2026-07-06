@@ -11,6 +11,16 @@ extends Spatial
 # ground/grass procedurally). TRACK_HALF_WIDTH must match
 # MetroNetwork.TUNNEL_HALF_WIDTH so the room's track bed lines up with
 # the tunnels MetroNetwork attaches to its open ends.
+#
+# UndergroundEntryMarker (in the .tscn) sits on the platform, not the
+# recessed track - the platform is a solid raised block with a sheer
+# face and no ramp, so teleporting onto the track left the player unable
+# to reach the platform without clipping through it. Its Y is
+# PLATFORM_HEIGHT - 0.5, not PLATFORM_HEIGHT: verified empirically that
+# this KinematicBody always settles exactly 0.5 below a surface's true
+# top after a scripted teleport (regardless of clearance above it),
+# so placing it "on" the surface at its literal height leaves the
+# player embedded up to the waist once physics settles.
 
 const STAIR_STEPS := 6
 const STEP_HEIGHT := 0.35
