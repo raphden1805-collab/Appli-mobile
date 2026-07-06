@@ -22,36 +22,38 @@ Ce qui est jouable aujourd'hui :
   de glissement (visée caméra), boutons d'action (sauter, sprint,
   récolter/placer, interagir, construire) - en plus du clavier/souris
   pour tester depuis l'éditeur Godot
-- Monde d'environ 800x800 (agrandi nettement par rapport aux versions
-  précédentes) avec biomes **générés aléatoirement** (bruit de
-  Perlin/Simplex, formes organiques) : désert, plaine, neige - la zone
-  de spawn reste toujours en plaine quelle que soit la seed
+- Monde d'environ 1600x1600 (agrandi nettement par rapport aux versions
+  précédentes - 4x la surface) avec biomes **générés aléatoirement**
+  (bruit de Perlin/Simplex, formes organiques) : désert, plaine, neige -
+  la zone de spawn reste toujours en plaine quelle que soit la seed
 - **Île de forme vraiment aléatoire** : le littoral n'est pas un cercle
   mais un bruit angulaire (baies, péninsules) - change complètement de
   forme à chaque seed, visible sur la minimap
 - Forêts denses regroupées dans les plaines (en plus d'arbres épars),
   cactus décoratifs dans le désert
-- Points d'intérêt placés aléatoirement selon le biome : 3 villages
-  désertiques (huttes + caisses), 3 immeubles abandonnés et 3 gares
+- Points d'intérêt placés aléatoirement selon le biome : 4 villages
+  désertiques (huttes + caisses), 4 immeubles abandonnés et 4 gares
   abandonnées (wagon rouillé) dans les zones enneigées, tous lootables
-- **Réseau de métro souterrain connecté** (3 stations, zone enneigée) :
+- **Réseau de métro souterrain branché** (4 stations, zone enneigée) :
   chaque station a un kiosque de surface (auvent, piliers, panneau,
   escalier réel qui descend dans une fosse en béton) relié - via
   téléportation au pied de l'escalier (touche interagir, comme une
   caisse ou une porte ; le monde n'a pas de collision de terrain
   "trouable", donc c'est la seule façon de passer du niveau du sol au
-  sous-sol) - à un quai séparé loin sous la carte. Contrairement aux
-  versions précédentes (stations isolées), les quais sont maintenant
-  raccordés entre eux par un vrai réseau de tunnels voûtés (section en
-  fer à cheval, pas des couloirs carrés) avec nervures de soutènement et
-  éclairage périodique, et une **rame automatique** (deux wagons +
-  phare) circule en boucle d'un bout à l'autre du réseau - du vrai trafic
-  souterrain sous la carte plutôt que des salles isolées
-- Minimap en haut à droite : image générée à partir du même bruit que
-  le monde réel (donc toujours exacte), icônes différentes par type de
-  point d'intérêt (carré = village, cercle = immeuble, losange = gare,
-  triangle turquoise = métro, cercle jaune = ruines de départ), boussole
-  "N", flèche joueur
+  sous-sol) - à un vrai quai souterrain (plateforme surélevée de chaque
+  côté d'une voie en contrebas avec rails, comme une vraie station,
+  et non plus un simple couloir plat). Les 4 quais sont reliés entre eux
+  par un vrai réseau de tunnels voûtés (section en fer à cheval, pas des
+  couloirs carrés) qui se rejoignent à un **carrefour central** avec
+  4 branches dans 4 directions différentes - en suivant les rails depuis
+  n'importe quelle station on peut donc rejoindre n'importe quelle autre.
+  Les jonctions (virages et carrefour) sont de vraies pièces creuses
+  ouvertes seulement du côté des tunnels connectés - pas des blocs
+  pleins, donc on peut vraiment marcher au travers, pas juste les voir en
+  vidéo. Nervures de soutènement et éclairage périodique dans les
+  tunnels, et une **rame automatique** (deux wagons + phare) fait la
+  tournée de toutes les branches en boucle - du vrai trafic souterrain
+  sous la carte plutôt que des salles isolées
 - Minimap en haut à droite : image générée à partir du même bruit que
   le monde réel (donc toujours exacte), icônes différentes par type de
   point d'intérêt (carré = village, cercle = immeuble, losange = gare,

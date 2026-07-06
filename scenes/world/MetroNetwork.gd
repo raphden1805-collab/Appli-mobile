@@ -1,13 +1,18 @@
 extends Spatial
 # Connects every abandoned metro station's platform room (see
-# AbandonedMetro.tscn, which now opens on both ends instead of being a
-# sealed box) into one underground network of arched tunnels, plus a
-# train that runs back and forth through it - real underground traffic
-# spanning the map instead of isolated rooms.
+# AbandonedMetro.tscn) into one underground network, plus a train that
+# tours the whole thing - real branching underground traffic instead of
+# isolated rooms or a single straight line.
 #
-# Stations are chained in X order; each connection is a simple 3-segment
-# "dogleg" (out along Z, across along X, back along Z) so every tunnel
-# piece is a straight, axis-aligned extrusion - no need to handle curves.
+# Topology: a central hub junction sits at the stations' centroid; each
+# station (up to 4) is assigned one of the 4 cardinal ports around the
+# hub (sorted by angle so they fan out to genuinely different
+# directions) and connected via a straight-segment "dogleg" (at most one
+# 90-degree turn, or two for a station on the opposite side of the hub).
+# Every tunnel piece is a straight, axis-aligned extrusion - no curves
+# needed. Junctions (corners and the hub) are hollow rooms open only on
+# the sides an actual tunnel connects to - a solid filled block there
+# would physically block the player/train from ever passing through.
 
 const TUNNEL_Y := -40.0
 const TUNNEL_HALF_WIDTH := 2.0
@@ -17,6 +22,10 @@ const STATION_HALF_LENGTH := 10.0
 const SEGMENT_LENGTH := 5.0
 const RIB_EVERY := 4
 const LIGHT_EVERY := 6
+const HUB_HALF := TUNNEL_HALF_WIDTH + 1.2
+
+const PORT_DIRS := [Vector2(0, -1), Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0)]
+const CARDINALS := [Vector2(0, -1), Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0)]
 
 const CONCRETE_COLOR := preload("res://assets/textures/concrete/Color.jpg")
 const CONCRETE_NORMAL := preload("res://assets/textures/concrete/NormalGL.jpg")
@@ -30,43 +39,64 @@ var tunnel_mat: SpatialMaterial
 var rib_mat: SpatialMaterial
 var rail_mat: SpatialMaterial
 var rust_mat: SpatialMaterial
+var _sort_hub := Vector2.ZERO
 
 func build(station_positions: Array) -> void:
 	_init_materials()
-	if station_positions.size() == 0:
+	var n := station_positions.size()
+	if n == 0:
 		return
-	if station_positions.size() == 1:
+	if n == 1:
 		_cap_end(station_positions[0], true)
 		_cap_end(station_positions[0], false)
 		return
 
-	var path := [station_positions[0]]
-	for i in range(station_positions.size() - 1):
-		var a: Vector2 = station_positions[i]
-		var b: Vector2 = station_positions[i + 1]
-		var exit_a := a + Vector2(0, STATION_HALF_LENGTH)
-		var entry_b := b + Vector2(0, -STATION_HALF_LENGTH)
-		var mid_z := (exit_a.y + entry_b.y) * 0.5
-		var corner1 := Vector2(exit_a.x, mid_z)
-		var corner2 := Vector2(entry_b.x, mid_z)
-		_build_straight(exit_a, corner1)
-		_build_corner(corner1)
-		_build_straight(corner1, corner2)
-		_build_corner(corner2)
-		_build_straight(corner2, entry_b)
-		path.append(exit_a)
-		path.append(corner1)
-		path.append(corner2)
-		path.append(entry_b)
-		path.append(b)
+	var hub := Vector2.ZERO
+	for p in station_positions:
+		hub += p
+	hub /= n
 
-	_cap_end(station_positions[0], true)
-	_cap_end(station_positions[station_positions.size() - 1], false)
+	# Only 4 cardinal ports exist at the hub - extra stations beyond that
+	# just get a sealed room (still reachable from the surface, just not
+	# part of the tunnel network). Not expected with the default station
+	# count, but kept safe rather than crashing.
+	var hub_stations: Array = station_positions
+	var orphan_stations: Array = []
+	if n > 4:
+		hub_stations = station_positions.slice(0, 3)
+		orphan_stations = station_positions.slice(4, n - 1)
+	for st in orphan_stations:
+		_cap_end(st, true)
+		_cap_end(st, false)
 
-	var path3d := []
-	for p in path:
-		path3d.append(Vector3(p.x, TUNNEL_Y + 1.6, p.y))
-	_build_train(path3d)
+	_sort_hub = hub
+	hub_stations.sort_custom(self, "_sort_by_angle")
+
+	var used_ports := []
+	var train_legs := []
+	for i in range(hub_stations.size()):
+		var station: Vector2 = hub_stations[i]
+		var port_dir: Vector2 = PORT_DIRS[i]
+		used_ports.append(port_dir)
+		var hub_exit := hub + port_dir * HUB_HALF
+		var port_is_x := abs(port_dir.x) > 0.5
+
+		# Whichever station end faces the hub gets the tunnel; the other
+		# end is sealed (see AbandonedMetro.tscn - the platform's own
+		# end-walls already flank the track-width gap on both ends, so
+		# this cap only needs to plug that gap, not the whole room).
+		var front_faces_hub: bool = hub.y < station.y
+		var station_exit := station + Vector2(0, -STATION_HALF_LENGTH if front_faces_hub else STATION_HALF_LENGTH)
+		_cap_end(station, not front_faces_hub)
+
+		var leg := _connect_ports(hub_exit, port_is_x, station_exit, false)
+		train_legs.append({"leg": leg, "station": station})
+
+	_build_junction(hub, HUB_HALF, used_ports)
+	_build_train_tour(train_legs)
+
+func _sort_by_angle(a: Vector2, b: Vector2) -> bool:
+	return (a - _sort_hub).angle() < (b - _sort_hub).angle()
 
 func _init_materials() -> void:
 	tunnel_mat = SpatialMaterial.new()
@@ -125,6 +155,46 @@ func _arch_profile() -> Array:
 		Vector2(w, 0.0),
 	]
 
+# Builds a straight-segment connector between two "ports" (a point plus
+# whether its outward tunnel direction is along X or always along Z for
+# a station). Uses a single corner if the two ports face perpendicular
+# directions, or two corners (a Z/X dogleg) if they face the same axis.
+# Returns the ordered waypoints from from_point to to_point (inclusive)
+# for the train path.
+func _connect_ports(from_point: Vector2, from_is_x: bool, to_point: Vector2, to_is_x: bool) -> Array:
+	var waypoints := [from_point]
+	if from_is_x != to_is_x:
+		var corner: Vector2 = Vector2(to_point.x, from_point.y) if from_is_x else Vector2(from_point.x, to_point.y)
+		_build_straight(from_point, corner)
+		_build_straight(corner, to_point)
+		var d1 := (corner - from_point).normalized()
+		var d2 := (to_point - corner).normalized()
+		_build_junction(corner, TUNNEL_HALF_WIDTH + 0.3, [-d1, d2])
+		waypoints.append(corner)
+	else:
+		var c1: Vector2
+		var c2: Vector2
+		if from_is_x:
+			var mid_x := (from_point.x + to_point.x) * 0.5
+			c1 = Vector2(mid_x, from_point.y)
+			c2 = Vector2(mid_x, to_point.y)
+		else:
+			var mid_z := (from_point.y + to_point.y) * 0.5
+			c1 = Vector2(from_point.x, mid_z)
+			c2 = Vector2(to_point.x, mid_z)
+		_build_straight(from_point, c1)
+		_build_straight(c1, c2)
+		_build_straight(c2, to_point)
+		var d1b := (c1 - from_point).normalized()
+		var d2b := (c2 - c1).normalized()
+		var d3b := (to_point - c2).normalized()
+		_build_junction(c1, TUNNEL_HALF_WIDTH + 0.3, [-d1b, d2b])
+		_build_junction(c2, TUNNEL_HALF_WIDTH + 0.3, [-d2b, d3b])
+		waypoints.append(c1)
+		waypoints.append(c2)
+	waypoints.append(to_point)
+	return waypoints
+
 func _build_straight(from2: Vector2, to2: Vector2) -> void:
 	var length := from2.distance_to(to2)
 	if length < 0.1:
@@ -182,53 +252,13 @@ func _extrude_ring(st: SurfaceTool, profile: Array, z0: float, z1: float) -> voi
 		st.add_vertex(a1)
 
 func _add_tunnel_floor(root: Spatial, length: float) -> void:
-	var body := StaticBody.new()
-	var box := BoxShape.new()
-	box.extents = Vector3(TUNNEL_HALF_WIDTH, 0.1, length * 0.5)
-	var shape := CollisionShape.new()
-	shape.shape = box
-	body.add_child(shape)
-	var cube := CubeMesh.new()
-	cube.size = Vector3(TUNNEL_HALF_WIDTH * 2.0, 0.2, length)
-	var mesh_instance := MeshInstance.new()
-	mesh_instance.mesh = cube
-	mesh_instance.material_override = tunnel_mat
-	body.add_child(mesh_instance)
-	body.transform.origin = Vector3(0, -0.1, -length * 0.5)
-	root.add_child(body)
-
+	_make_box(Vector3(0, -0.1, -length * 0.5), Vector3(TUNNEL_HALF_WIDTH * 2.0, 0.2, length), tunnel_mat, root)
 	for side in [-0.8, 0.8]:
-		var rail := StaticBody.new()
-		var rbox := BoxShape.new()
-		rbox.extents = Vector3(0.075, 0.05, length * 0.5)
-		var rshape := CollisionShape.new()
-		rshape.shape = rbox
-		rail.add_child(rshape)
-		var rcube := CubeMesh.new()
-		rcube.size = Vector3(0.15, 0.1, length)
-		var rmesh := MeshInstance.new()
-		rmesh.mesh = rcube
-		rmesh.material_override = rail_mat
-		rail.add_child(rmesh)
-		rail.transform.origin = Vector3(side, 0.05, -length * 0.5)
-		root.add_child(rail)
+		_make_box(Vector3(side, 0.05, -length * 0.5), Vector3(0.15, 0.1, length), rail_mat, root)
 
 func _add_rib(root: Spatial, z: float) -> void:
 	for side in [-1.0, 1.0]:
-		var body := StaticBody.new()
-		var box := BoxShape.new()
-		box.extents = Vector3(0.1, TUNNEL_WALL_HEIGHT * 0.5, 0.15)
-		var shape := CollisionShape.new()
-		shape.shape = box
-		body.add_child(shape)
-		var cube := CubeMesh.new()
-		cube.size = Vector3(0.2, TUNNEL_WALL_HEIGHT, 0.3)
-		var mesh_instance := MeshInstance.new()
-		mesh_instance.mesh = cube
-		mesh_instance.material_override = rib_mat
-		body.add_child(mesh_instance)
-		body.transform.origin = Vector3(side * (TUNNEL_HALF_WIDTH + 0.05), TUNNEL_WALL_HEIGHT * 0.5, z)
-		root.add_child(body)
+		_make_box(Vector3(side * (TUNNEL_HALF_WIDTH + 0.05), TUNNEL_WALL_HEIGHT * 0.5, z), Vector3(0.2, TUNNEL_WALL_HEIGHT, 0.3), rib_mat, root)
 
 func _add_light(root: Spatial, z: float) -> void:
 	var light := OmniLight.new()
@@ -238,40 +268,80 @@ func _add_light(root: Spatial, z: float) -> void:
 	light.omni_range = 9.0
 	root.add_child(light)
 
-func _build_corner(pos2: Vector2) -> void:
-	var half := TUNNEL_HALF_WIDTH + 0.3
-	var body := StaticBody.new()
-	var box := BoxShape.new()
-	box.extents = Vector3(half, TUNNEL_ARCH_HEIGHT * 0.5, half)
-	var shape := CollisionShape.new()
-	shape.shape = box
-	body.add_child(shape)
-	var cube := CubeMesh.new()
-	cube.size = Vector3(half * 2.0, TUNNEL_ARCH_HEIGHT, half * 2.0)
-	var mesh_instance := MeshInstance.new()
-	mesh_instance.mesh = cube
-	mesh_instance.material_override = tunnel_mat
-	body.add_child(mesh_instance)
-	body.transform.origin = Vector3(pos2.x, TUNNEL_Y + TUNNEL_ARCH_HEIGHT * 0.5, pos2.y)
-	add_child(body)
+# A hollow junction room (floor, ceiling, and walls only on the sides
+# without a tunnel) - open on every direction listed in open_dirs so the
+# player/train can actually pass through instead of hitting a solid block.
+func _build_junction(pos2: Vector2, half: float, open_dirs: Array) -> void:
+	var height := TUNNEL_ARCH_HEIGHT
+	_make_box(Vector3(pos2.x, TUNNEL_Y - 0.1, pos2.y), Vector3(half * 2.0, 0.2, half * 2.0), tunnel_mat)
+	_make_box(Vector3(pos2.x, TUNNEL_Y + height, pos2.y), Vector3(half * 2.0, 0.2, half * 2.0), tunnel_mat)
+	for d in CARDINALS:
+		if _dirs_contain(open_dirs, d):
+			continue
+		var wall_pos: Vector3
+		var wall_size: Vector3
+		if abs(d.y) > 0.5:
+			wall_pos = Vector3(pos2.x, TUNNEL_Y + height * 0.5, pos2.y + d.y * half)
+			wall_size = Vector3(half * 2.0, height, 0.2)
+		else:
+			wall_pos = Vector3(pos2.x + d.x * half, TUNNEL_Y + height * 0.5, pos2.y)
+			wall_size = Vector3(0.2, height, half * 2.0)
+		_make_box(wall_pos, wall_size, tunnel_mat)
+
+func _dirs_contain(dirs: Array, d: Vector2) -> bool:
+	for dd in dirs:
+		if dd.distance_to(d) < 0.1:
+			return true
+	return false
 
 func _cap_end(pos2: Vector2, is_front: bool) -> void:
 	var z_offset := -STATION_HALF_LENGTH if is_front else STATION_HALF_LENGTH
 	var half_w := TUNNEL_HALF_WIDTH + 0.1
+	_make_box(Vector3(pos2.x, TUNNEL_Y + TUNNEL_ARCH_HEIGHT * 0.5, pos2.y + z_offset), Vector3(half_w * 2.0, TUNNEL_ARCH_HEIGHT, 0.2), tunnel_mat)
+
+func _make_box(center: Vector3, size: Vector3, mat: SpatialMaterial, parent: Spatial = null) -> void:
+	if parent == null:
+		parent = self
 	var body := StaticBody.new()
 	var box := BoxShape.new()
-	box.extents = Vector3(half_w, TUNNEL_ARCH_HEIGHT * 0.5, 0.1)
+	box.extents = size * 0.5
 	var shape := CollisionShape.new()
 	shape.shape = box
 	body.add_child(shape)
 	var cube := CubeMesh.new()
-	cube.size = Vector3(half_w * 2.0, TUNNEL_ARCH_HEIGHT, 0.2)
+	cube.size = size
 	var mesh_instance := MeshInstance.new()
 	mesh_instance.mesh = cube
-	mesh_instance.material_override = tunnel_mat
+	mesh_instance.material_override = mat
 	body.add_child(mesh_instance)
-	body.transform.origin = Vector3(pos2.x, TUNNEL_Y + TUNNEL_ARCH_HEIGHT * 0.5, pos2.y + z_offset)
-	add_child(body)
+	body.transform.origin = center
+	parent.add_child(body)
+
+# Builds one continuous path visiting every station's platform in turn
+# via the hub - the train's own ping-pong then keeps retracing the whole
+# tour, so it eventually passes through every branch both ways.
+func _build_train_tour(train_legs: Array) -> void:
+	if train_legs.empty():
+		return
+	var path2d := []
+	for i in range(train_legs.size()):
+		var entry = train_legs[i]
+		var leg: Array = entry["leg"]
+		var station: Vector2 = entry["station"]
+		var station_exit: Vector2 = leg[leg.size() - 1]
+		var platform_point := station_exit + (station_exit - station).normalized() * 5.0
+
+		for p in leg:
+			path2d.append(p)
+		path2d.append(platform_point)
+		if i < train_legs.size() - 1:
+			for j in range(leg.size() - 1, -1, -1):
+				path2d.append(leg[j])
+
+	var path3d := []
+	for p in path2d:
+		path3d.append(Vector3(p.x, TUNNEL_Y + 1.6, p.y))
+	_build_train(path3d)
 
 func _build_train(path3d: Array) -> void:
 	if path3d.size() < 2:
