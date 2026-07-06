@@ -58,9 +58,14 @@ Ce qui est jouable aujourd'hui :
   montants, pas un simple poteau) et tuyaux courant le long des murs,
   éclairage périodique avec un vrai boîtier visible, et des tonneaux et
   une bâche en plus des caisses de butin - dans l'esprit d'une vraie
-  station de métro industrielle abandonnée. Une **rame automatique**
-  (deux wagons + phare) fait la tournée de toutes les branches en boucle
-  - du vrai trafic souterrain sous la carte plutôt que des salles isolées
+  station de métro industrielle abandonnée. Chaque quai est aussi
+  **agrandi** (salle plus longue) et dispose d'une **mezzanine**
+  surélevée avec rambarde rouge et son propre escalier, plus un
+  chariot élévateur (forklift) posé sur le quai - pour se rapprocher
+  de la grandeur d'une vraie station industrielle. Une **rame
+  automatique** (deux wagons + phare) fait la tournée de toutes les
+  branches en boucle - du vrai trafic souterrain sous la carte plutôt
+  que des salles isolées
 - Minimap en haut à droite : image générée à partir du même bruit que
   le monde réel (donc toujours exacte), icônes différentes par type de
   point d'intérêt (carré = village, cercle = immeuble, losange = gare,

@@ -21,9 +21,22 @@ const STEP_START_Z := -2.0
 const TRACK_HALF_WIDTH := 6.0
 const PLATFORM_WIDTH := 4.2
 const ROOM_HALF_WIDTH := TRACK_HALF_WIDTH + PLATFORM_WIDTH
-const ROOM_HALF_LENGTH := 10.0
+# Longer than before (was 10.0) for a grander, multi-level hall rather
+# than a compact platform - must match MetroNetwork.STATION_HALF_LENGTH,
+# since that's where the tunnel/cap attaches to this room's open end.
+const ROOM_HALF_LENGTH := 14.0
 const ROOM_HEIGHT := 10.2
 const PLATFORM_HEIGHT := 1.0
+
+# A raised mezzanine (catwalk overlooking the tracks, reached by stairs)
+# along the +X platform, echoing the multi-level industrial-complex feel
+# of the reference photos rather than a single flat platform.
+const MEZZ_Y := 4.0
+const MEZZ_THICKNESS := 0.3
+const MEZZ_X_INNER := TRACK_HALF_WIDTH + 1.0
+const MEZZ_X_OUTER := ROOM_HALF_WIDTH - 0.5
+const MEZZ_Z_HALF := 7.0
+const MEZZ_RAIL_HEIGHT := 0.9
 
 const CONCRETE_COLOR := preload("res://assets/textures/concrete/Color.jpg")
 const CONCRETE_NORMAL := preload("res://assets/textures/concrete/NormalGL.jpg")
@@ -48,6 +61,8 @@ var _tie_mat: SpatialMaterial
 var _rust_mat: SpatialMaterial
 var _pipe_mat: SpatialMaterial
 var _tarp_mat: SpatialMaterial
+var _rail_guard_mat: SpatialMaterial
+var _machine_mat: SpatialMaterial
 
 func _ready() -> void:
 	_init_materials()
@@ -111,6 +126,22 @@ func _init_materials() -> void:
 	_tarp_mat.albedo_color = Color(0.14, 0.18, 0.13)
 	_tarp_mat.roughness = 0.85
 
+	# Bright safety-red guardrail, matching the reference photos' distinct
+	# red mezzanine railings against the grey concrete/rust everything else.
+	_rail_guard_mat = SpatialMaterial.new()
+	_rail_guard_mat.albedo_color = Color(0.55, 0.08, 0.05)
+	_rail_guard_mat.metallic = 0.2
+	_rail_guard_mat.roughness = 0.5
+
+	_machine_mat = SpatialMaterial.new()
+	_machine_mat.albedo_color = Color(0.55, 0.42, 0.05)
+	_machine_mat.albedo_texture = METAL_COLOR
+	_machine_mat.metallic = 0.4
+	_machine_mat.roughness = 0.6
+	_machine_mat.roughness_texture = METAL_ROUGH
+	_machine_mat.normal_enabled = true
+	_machine_mat.normal_texture = METAL_NORMAL
+
 # direction -1 = each step lower than the last (surface entrance
 # descending into the pit), +1 = each step higher (underground side
 # climbing back towards the sealed exit).
@@ -144,6 +175,8 @@ func _build_room() -> void:
 	_build_pipes()
 	_build_fixture_lights()
 	_build_clutter()
+	_build_mezzanine()
+	_build_forklift()
 
 # Rusted steel trusses along the platform edge - the dominant structural
 # motif in real industrial subway stations - instead of bare concrete.
@@ -192,10 +225,46 @@ func _build_clutter() -> void:
 	mesh_instance.mesh = cyl
 	mesh_instance.material_override = _rust_mat
 	barrel.add_child(mesh_instance)
-	barrel.transform.origin = Vector3(TRACK_HALF_WIDTH + 1.8, PLATFORM_HEIGHT + 0.6, -7.0)
+	barrel.transform.origin = Vector3(TRACK_HALF_WIDTH + 1.8, PLATFORM_HEIGHT + 0.6, 11.0)
 	underground_root.add_child(barrel)
 
 	_make_box(underground_root, Vector3(-(TRACK_HALF_WIDTH + 1.8), PLATFORM_HEIGHT + 0.25, 6.5), Vector3(2.2, 0.5, 1.6), _tarp_mat)
+
+# A raised catwalk overlooking the tracks with a red guardrail, reached
+# by a full-width staircase from the platform - the reference's biggest
+# "grand industrial complex" cue we were missing (a single flat platform
+# reads much smaller than a multi-level station).
+func _build_mezzanine() -> void:
+	var floor_x := (MEZZ_X_INNER + MEZZ_X_OUTER) * 0.5
+	var floor_width := MEZZ_X_OUTER - MEZZ_X_INNER
+	_make_box(underground_root, Vector3(floor_x, MEZZ_Y - MEZZ_THICKNESS * 0.5, 0), Vector3(floor_width, MEZZ_THICKNESS, MEZZ_Z_HALF * 2.0), _concrete_mat)
+
+	_make_box(underground_root, Vector3(MEZZ_X_INNER, MEZZ_Y + MEZZ_RAIL_HEIGHT * 0.5, 0), Vector3(0.08, MEZZ_RAIL_HEIGHT, MEZZ_Z_HALF * 2.0), _rail_guard_mat)
+	var post_count := int(MEZZ_Z_HALF * 2.0 / 2.0)
+	for i in range(post_count + 1):
+		var z := -MEZZ_Z_HALF + i * 2.0
+		_make_box(underground_root, Vector3(MEZZ_X_INNER, MEZZ_Y + MEZZ_RAIL_HEIGHT * 0.5, z), Vector3(0.14, MEZZ_RAIL_HEIGHT, 0.14), _rail_guard_mat)
+
+	# Full-width stair from the platform up to the mezzanine's front edge.
+	var steps := 8
+	var stair_z_start := -MEZZ_Z_HALF - 2.5
+	var step_depth := 2.5 / steps
+	var step_height := (MEZZ_Y - PLATFORM_HEIGHT) / steps
+	for i in range(steps):
+		var top_y := PLATFORM_HEIGHT + step_height * (i + 1)
+		var z := stair_z_start + i * step_depth
+		_make_box(underground_root, Vector3(floor_x, top_y - step_height * 0.5, z + step_depth * 0.5), Vector3(floor_width, step_height, step_depth), _concrete_mat)
+
+# A simple boxy forklift (body, mast, forks) for extra industrial-clutter
+# flavor - not a real model, but reads fine as a low-poly prop at a glance.
+func _build_forklift() -> void:
+	var x := -(TRACK_HALF_WIDTH + 2.2)
+	var z := 2.0
+	_make_box(underground_root, Vector3(x, PLATFORM_HEIGHT + 0.6, z), Vector3(1.3, 1.2, 2.0), _machine_mat)
+	_make_box(underground_root, Vector3(x, PLATFORM_HEIGHT + 1.5, z + 0.9), Vector3(1.1, 0.6, 0.3), _machine_mat)
+	_make_box(underground_root, Vector3(x, PLATFORM_HEIGHT + 1.1, z - 1.1), Vector3(0.15, 2.2, 0.15), _rust_mat)
+	for side in [-0.35, 0.35]:
+		_make_box(underground_root, Vector3(x + side, PLATFORM_HEIGHT + 0.15, z - 1.9), Vector3(0.2, 0.1, 1.1), _rust_mat)
 
 func _make_box(parent: Spatial, center: Vector3, size: Vector3, mat: SpatialMaterial) -> void:
 	var body := StaticBody.new()
