@@ -15,14 +15,19 @@ extends Spatial
 # would physically block the player/train from ever passing through.
 
 const TUNNEL_Y := -40.0
-const TUNNEL_HALF_WIDTH := 2.0
-const TUNNEL_WALL_HEIGHT := 2.0
-const TUNNEL_ARCH_HEIGHT := 3.5
+# The rail/track cross-section (width+height) is 3x the original size
+# per user request - a much grander bore, not a cramped corridor. Only
+# width/height scale; tunnel run lengths and station spacing are
+# unaffected. TUNNEL_HALF_WIDTH must match AbandonedMetro.TRACK_HALF_WIDTH
+# so station track beds line up with the tunnels connecting to them.
+const TUNNEL_HALF_WIDTH := 6.0
+const TUNNEL_WALL_HEIGHT := 6.0
+const TUNNEL_ARCH_HEIGHT := 10.5
 const STATION_HALF_LENGTH := 10.0
-const SEGMENT_LENGTH := 5.0
+const SEGMENT_LENGTH := 8.0
 const RIB_EVERY := 4
 const LIGHT_EVERY := 6
-const HUB_HALF := TUNNEL_HALF_WIDTH + 1.2
+const HUB_HALF := TUNNEL_HALF_WIDTH + 3.6
 
 const PORT_DIRS := [Vector2(0, -1), Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0)]
 const CARDINALS := [Vector2(0, -1), Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0)]
@@ -169,7 +174,7 @@ func _connect_ports(from_point: Vector2, from_is_x: bool, to_point: Vector2, to_
 		_build_straight(corner, to_point)
 		var d1 := (corner - from_point).normalized()
 		var d2 := (to_point - corner).normalized()
-		_build_junction(corner, TUNNEL_HALF_WIDTH + 0.3, [-d1, d2])
+		_build_junction(corner, TUNNEL_HALF_WIDTH + 0.9, [-d1, d2])
 		waypoints.append(corner)
 	else:
 		var c1: Vector2
@@ -188,8 +193,8 @@ func _connect_ports(from_point: Vector2, from_is_x: bool, to_point: Vector2, to_
 		var d1b := (c1 - from_point).normalized()
 		var d2b := (c2 - c1).normalized()
 		var d3b := (to_point - c2).normalized()
-		_build_junction(c1, TUNNEL_HALF_WIDTH + 0.3, [-d1b, d2b])
-		_build_junction(c2, TUNNEL_HALF_WIDTH + 0.3, [-d2b, d3b])
+		_build_junction(c1, TUNNEL_HALF_WIDTH + 0.9, [-d1b, d2b])
+		_build_junction(c2, TUNNEL_HALF_WIDTH + 0.9, [-d2b, d3b])
 		waypoints.append(c1)
 		waypoints.append(c2)
 	waypoints.append(to_point)
@@ -253,19 +258,19 @@ func _extrude_ring(st: SurfaceTool, profile: Array, z0: float, z1: float) -> voi
 
 func _add_tunnel_floor(root: Spatial, length: float) -> void:
 	_make_box(Vector3(0, -0.1, -length * 0.5), Vector3(TUNNEL_HALF_WIDTH * 2.0, 0.2, length), tunnel_mat, root)
-	for side in [-0.8, 0.8]:
+	for side in [-2.4, 2.4]:
 		_make_box(Vector3(side, 0.05, -length * 0.5), Vector3(0.15, 0.1, length), rail_mat, root)
 
 func _add_rib(root: Spatial, z: float) -> void:
 	for side in [-1.0, 1.0]:
-		_make_box(Vector3(side * (TUNNEL_HALF_WIDTH + 0.05), TUNNEL_WALL_HEIGHT * 0.5, z), Vector3(0.2, TUNNEL_WALL_HEIGHT, 0.3), rib_mat, root)
+		_make_box(Vector3(side * (TUNNEL_HALF_WIDTH + 0.15), TUNNEL_WALL_HEIGHT * 0.5, z), Vector3(0.2, TUNNEL_WALL_HEIGHT, 0.3), rib_mat, root)
 
 func _add_light(root: Spatial, z: float) -> void:
 	var light := OmniLight.new()
-	light.transform.origin = Vector3(0, TUNNEL_ARCH_HEIGHT - 0.3, z)
+	light.transform.origin = Vector3(0, TUNNEL_ARCH_HEIGHT - 0.9, z)
 	light.light_color = Color(0.85, 0.75, 0.55)
-	light.light_energy = 0.55
-	light.omni_range = 9.0
+	light.light_energy = 0.7
+	light.omni_range = 18.0
 	root.add_child(light)
 
 # A hollow junction room (floor, ceiling, and walls only on the sides
@@ -296,7 +301,7 @@ func _dirs_contain(dirs: Array, d: Vector2) -> bool:
 
 func _cap_end(pos2: Vector2, is_front: bool) -> void:
 	var z_offset := -STATION_HALF_LENGTH if is_front else STATION_HALF_LENGTH
-	var half_w := TUNNEL_HALF_WIDTH + 0.1
+	var half_w := TUNNEL_HALF_WIDTH + 0.3
 	_make_box(Vector3(pos2.x, TUNNEL_Y + TUNNEL_ARCH_HEIGHT * 0.5, pos2.y + z_offset), Vector3(half_w * 2.0, TUNNEL_ARCH_HEIGHT, 0.2), tunnel_mat)
 
 func _make_box(center: Vector3, size: Vector3, mat: SpatialMaterial, parent: Spatial = null) -> void:
@@ -343,6 +348,11 @@ func _build_train_tour(train_legs: Array) -> void:
 		path3d.append(Vector3(p.x, TUNNEL_Y + 1.6, p.y))
 	_build_train(path3d)
 
+const CAR_WIDTH := 7.8
+const CAR_HEIGHT := 6.6
+const CAR_LENGTH := 5.0
+const CAR_SPACING := 5.4
+
 func _build_train(path3d: Array) -> void:
 	if path3d.size() < 2:
 		return
@@ -353,15 +363,15 @@ func _build_train(path3d: Array) -> void:
 	for i in range(2):
 		var body := MeshInstance.new()
 		var cube := CubeMesh.new()
-		cube.size = Vector3(2.6, 2.2, 3.6)
+		cube.size = Vector3(CAR_WIDTH, CAR_HEIGHT, CAR_LENGTH)
 		body.mesh = cube
 		body.material_override = rust_mat
-		body.transform.origin = Vector3(0, 1.1, 2.0 + i * 3.8)
+		body.transform.origin = Vector3(0, CAR_HEIGHT * 0.5 + 0.05, CAR_LENGTH * 0.5 + i * CAR_SPACING)
 		train.add_child(body)
 
 	var headlight := SpotLight.new()
-	headlight.transform.origin = Vector3(0, 1.3, -1.7)
-	headlight.spot_range = 14.0
+	headlight.transform.origin = Vector3(0, CAR_HEIGHT * 0.35, -0.3)
+	headlight.spot_range = 40.0
 	headlight.spot_angle = 35.0
 	headlight.light_color = Color(1.0, 0.95, 0.8)
 	headlight.light_energy = 1.2

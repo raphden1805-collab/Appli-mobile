@@ -42,7 +42,10 @@ Ce qui est jouable aujourd'hui :
   "trouable", donc c'est la seule façon de passer du niveau du sol au
   sous-sol) - à un vrai quai souterrain (plateforme surélevée de chaque
   côté d'une voie en contrebas avec rails, comme une vraie station,
-  et non plus un simple couloir plat). Les 4 quais sont reliés entre eux
+  et non plus un simple couloir plat). L'espace des rails (voie, quai,
+  tunnels) est volontairement **3x plus grand** que dans les toutes
+  premières versions - un vrai grand tunnel, pas un couloir étriqué. Les
+  4 quais sont reliés entre eux
   par un vrai réseau de tunnels voûtés (section en fer à cheval, pas des
   couloirs carrés) qui se rejoignent à un **carrefour central** avec
   4 branches dans 4 directions différentes - en suivant les rails depuis

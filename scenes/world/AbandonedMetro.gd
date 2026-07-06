@@ -18,12 +18,12 @@ const STEP_DEPTH := 0.9
 const STEP_WIDTH := 3.0
 const STEP_START_Z := -2.0
 
-const TRACK_HALF_WIDTH := 2.0
-const PLATFORM_WIDTH := 1.4
+const TRACK_HALF_WIDTH := 6.0
+const PLATFORM_WIDTH := 4.2
 const ROOM_HALF_WIDTH := TRACK_HALF_WIDTH + PLATFORM_WIDTH
 const ROOM_HALF_LENGTH := 10.0
-const ROOM_HEIGHT := 3.4
-const PLATFORM_HEIGHT := 0.35
+const ROOM_HEIGHT := 10.2
+const PLATFORM_HEIGHT := 1.0
 
 const CONCRETE_COLOR := preload("res://assets/textures/concrete/Color.jpg")
 const CONCRETE_NORMAL := preload("res://assets/textures/concrete/NormalGL.jpg")
@@ -90,9 +90,9 @@ func _build_room() -> void:
 	_make_box(underground_root, Vector3(0, -0.1, 0), Vector3(ROOM_HALF_WIDTH * 2.0, 0.2, ROOM_HALF_LENGTH * 2.0), _concrete_mat)
 	_make_box(underground_root, Vector3(0, ROOM_HEIGHT, 0), Vector3(ROOM_HALF_WIDTH * 2.0, 0.2, ROOM_HALF_LENGTH * 2.0), _concrete_mat)
 	for side in [-1.0, 1.0]:
-		_make_box(underground_root, Vector3(side * (ROOM_HALF_WIDTH + 0.1), ROOM_HEIGHT * 0.5, 0), Vector3(0.2, ROOM_HEIGHT, ROOM_HALF_LENGTH * 2.0), _concrete_mat)
+		_make_box(underground_root, Vector3(side * (ROOM_HALF_WIDTH + 0.3), ROOM_HEIGHT * 0.5, 0), Vector3(0.2, ROOM_HEIGHT, ROOM_HALF_LENGTH * 2.0), _concrete_mat)
 		_make_box(underground_root, Vector3(side * (TRACK_HALF_WIDTH + PLATFORM_WIDTH * 0.5), PLATFORM_HEIGHT * 0.5, 0), Vector3(PLATFORM_WIDTH, PLATFORM_HEIGHT, ROOM_HALF_LENGTH * 2.0), _platform_mat)
-		_make_box(underground_root, Vector3(0.8 * side, 0.05, 0), Vector3(0.15, 0.1, ROOM_HALF_LENGTH * 2.0), _rail_mat)
+		_make_box(underground_root, Vector3(2.4 * side, 0.05, 0), Vector3(0.15, 0.1, ROOM_HALF_LENGTH * 2.0), _rail_mat)
 		for z_end in [-ROOM_HALF_LENGTH, ROOM_HALF_LENGTH]:
 			_make_box(underground_root, Vector3(side * (TRACK_HALF_WIDTH + PLATFORM_WIDTH * 0.5), ROOM_HEIGHT * 0.5, z_end), Vector3(PLATFORM_WIDTH, ROOM_HEIGHT, 0.2), _concrete_mat)
 
