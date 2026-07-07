@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SERVER_URL } from '../config';
 import { Character } from '../components/Character';
+import { HexBackground } from '../components/HexBackground';
 
 type Stats = { wins: number; matchesPlayed: number; playtimeMs: number };
 
@@ -83,6 +84,8 @@ export function LobbyScreen({
 
   return (
     <View style={styles.container}>
+      <HexBackground />
+
       <View style={styles.header}>
         <Text style={styles.brand}>Empire Hex</Text>
         <View style={styles.tabs}>
@@ -111,7 +114,9 @@ export function LobbyScreen({
           <View style={styles.characterStage}>
             <Character color={colorForName(name)} />
           </View>
-          <Text style={styles.name}>{name}</Text>
+          <View style={styles.nameTag}>
+            <Text style={styles.name}>{name}</Text>
+          </View>
         </View>
 
         <View style={styles.sidebar}>
@@ -181,24 +186,46 @@ export function LobbyScreen({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
   header: { padding: 16, gap: 8 },
-  brand: { color: '#fff', fontSize: 20, fontWeight: '800' },
+  brand: { color: '#fff', fontSize: 20, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 6 },
   tabs: { flexDirection: 'row', gap: 18 },
-  tab: { color: '#777', fontWeight: '700', fontSize: 12, letterSpacing: 0.5 },
+  tab: { color: '#888', fontWeight: '700', fontSize: 12, letterSpacing: 0.5 },
   tabActive: { color: '#fff', textDecorationLine: 'underline' },
   body: { flex: 1, flexDirection: 'row', paddingHorizontal: 16, gap: 16 },
-  statsPanel: { width: 170 },
-  statsTitle: { color: '#888', fontWeight: '700', marginBottom: 8, fontSize: 11, letterSpacing: 1 },
-  statLine: { color: '#ccc', marginBottom: 4, fontSize: 13 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  characterStage: { width: 220, height: 300 },
+  statsPanel: {
+    width: 180,
+    backgroundColor: 'rgba(14,16,19,0.6)',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    alignSelf: 'flex-start',
+  },
+  statsTitle: { color: '#8a8f96', fontWeight: '700', marginBottom: 8, fontSize: 11, letterSpacing: 1 },
+  statLine: { color: '#d8dade', marginBottom: 4, fontSize: 13 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  characterStage: { width: 280, height: 380 },
+  nameTag: {
+    backgroundColor: 'rgba(10,12,14,0.55)',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+  },
   name: { color: '#fdd835', fontWeight: '700', fontSize: 16 },
   sidebar: { width: 100, gap: 10, paddingTop: 4 },
-  sidebarButton: { backgroundColor: '#1e1e1e', borderRadius: 10, paddingVertical: 10, alignItems: 'center', gap: 4 },
+  sidebarButton: {
+    backgroundColor: 'rgba(20,23,27,0.65)',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
   sidebarIcon: { fontSize: 20 },
   sidebarLabel: { color: '#ddd', fontSize: 11, fontWeight: '600' },
   stubToast: {
     alignSelf: 'center',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(20,23,27,0.85)',
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -206,14 +233,30 @@ const styles = StyleSheet.create({
   },
   stubText: { color: '#aaa', fontSize: 12 },
   systemLog: { paddingHorizontal: 16, marginBottom: 8 },
-  systemLogText: { color: '#4caf50', fontSize: 11 },
+  systemLogText: { color: '#4caf50', fontSize: 11, textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4 },
   footer: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', padding: 16 },
   footerLeft: { flex: 1, gap: 10 },
-  modeBox: { alignSelf: 'flex-start', backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 },
+  modeBox: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(18,20,24,0.7)',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
   modeLabel: { color: '#888', fontSize: 10, letterSpacing: 1 },
   modeValue: { color: '#fff', fontWeight: '800', fontSize: 14 },
   buttonRow: { flexDirection: 'row', gap: 12 },
-  secondaryButton: { flex: 1, backgroundColor: '#1e1e1e', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: 'rgba(24,27,31,0.8)',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+  },
   secondaryLabel: { color: '#ccc', fontWeight: '700' },
   primaryButton: { flex: 1, backgroundColor: '#1565c0', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
   cancelButton: { flex: 1, backgroundColor: '#c62828', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
@@ -225,7 +268,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 92,
-    backgroundColor: '#132a44',
+    backgroundColor: 'rgba(19,42,68,0.92)',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 18,

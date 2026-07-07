@@ -1,15 +1,14 @@
-import React, { Suspense, useEffect, useMemo, useRef } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Asset } from 'expo-asset';
 import * as THREE from 'three';
-
-const SKY_TOP = '#3a5a7a';
-const SKY_BOTTOM = '#0c141c';
+import type { Group } from 'three';
 
 const modelAsset = Asset.fromModule(require('../../assets/models/CesiumMan.glb'));
 
 const TARGET_HEIGHT = 1.75;
+const TURN_SPEED = 0.12;
 
 function AnimatedModel() {
   const gltf = useLoader(GLTFLoader, modelAsset.uri);
@@ -35,7 +34,7 @@ function AnimatedModel() {
     if (gltf.animations.length === 0) return;
     const mixer = new THREE.AnimationMixer(gltf.scene);
     const action = mixer.clipAction(gltf.animations[0]);
-    action.timeScale = 0.5;
+    action.timeScale = 0.45;
     action.play();
     mixerRef.current = mixer;
     return () => {
@@ -59,79 +58,64 @@ function LoadingPlaceholder() {
   );
 }
 
-function GradientSky() {
-  const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(16, 11, 1, 1);
-    const top = new THREE.Color(SKY_TOP);
-    const bottom = new THREE.Color(SKY_BOTTOM);
-    // ordre des sommets de PlaneGeometry : haut-gauche, haut-droit, bas-gauche, bas-droit
-    const colors = new Float32Array([
-      top.r, top.g, top.b,
-      top.r, top.g, top.b,
-      bottom.r, bottom.g, bottom.b,
-      bottom.r, bottom.g, bottom.b,
-    ]);
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    return geo;
-  }, []);
-
+function Pedestal({ color }: { color: string }) {
+  // Socle + halo lumineux (anneaux concentriques degressifs, sans texture canvas
+  // pour rester compatible React Native).
+  const rings = [
+    { r: 1.15, o: 0.05 },
+    { r: 0.85, o: 0.09 },
+    { r: 0.55, o: 0.14 },
+  ];
   return (
-    <mesh geometry={geometry} position={[0, 2, -6]}>
-      <meshBasicMaterial vertexColors fog={false} />
-    </mesh>
-  );
-}
-
-function DistantHexes() {
-  const hexes = useMemo(
-    () => [
-      { x: -2.4, z: -4, s: 0.9, o: 0.25 },
-      { x: 2.1, z: -4.6, s: 1.1, o: 0.2 },
-      { x: -0.8, z: -5.2, s: 0.7, o: 0.18 },
-      { x: 3.2, z: -3.4, s: 0.6, o: 0.22 },
-    ],
-    []
-  );
-  return (
-    <>
-      {hexes.map((h, i) => (
-        <mesh key={i} position={[h.x, h.s * 0.5, h.z]}>
-          <cylinderGeometry args={[h.s, h.s, 0.08, 6]} />
-          <meshBasicMaterial color="#274863" transparent opacity={h.o} fog={false} />
+    <group position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {rings.map((ring, i) => (
+        <mesh key={i} position={[0, 0, i * 0.001]}>
+          <circleGeometry args={[ring.r, 48]} />
+          <meshBasicMaterial color={color} transparent opacity={ring.o} />
         </mesh>
       ))}
-    </>
+      <mesh position={[0, 0, 0.004]}>
+        <ringGeometry args={[1.15, 1.2, 48]} />
+        <meshBasicMaterial color={color} transparent opacity={0.35} />
+      </mesh>
+    </group>
   );
 }
 
-function Ground() {
+function Stage({ color }: { color: string }) {
+  const turntable = useRef<Group>(null);
+  useFrame((_, delta) => {
+    if (turntable.current) turntable.current.rotation.y += delta * TURN_SPEED;
+  });
+
   return (
-    <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[2.6, 48]} />
-      <meshStandardMaterial color="#12202c" />
-    </mesh>
+    <>
+      <Pedestal color={color} />
+      <group ref={turntable}>
+        <Suspense fallback={<LoadingPlaceholder />}>
+          <AnimatedModel />
+        </Suspense>
+      </group>
+    </>
   );
 }
 
 export function Character({ color }: { color: string }) {
   return (
     <Canvas
+      gl={{ alpha: true }}
       camera={{ position: [0, 1.3, 3.4], fov: 32 }}
-      onCreated={({ camera }) => camera.lookAt(0, 0.95, 0)}
+      onCreated={({ camera, gl }) => {
+        camera.lookAt(0, 0.95, 0);
+        gl.setClearColor(0x000000, 0);
+      }}
     >
-      <fog attach="fog" args={[SKY_BOTTOM, 5, 11]} />
-      <GradientSky />
-      <DistantHexes />
-      <Ground />
+      <ambientLight intensity={0.65} />
+      <directionalLight position={[3, 5, 4]} intensity={1.2} />
+      <directionalLight position={[-3, 2, -2]} intensity={0.3} />
+      <pointLight position={[0, 1.4, 1.6]} intensity={0.5} color={color} />
 
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[3, 5, 4]} intensity={1.1} />
-      <directionalLight position={[-3, 2, -2]} intensity={0.25} />
-      <pointLight position={[0, 1.4, 1.6]} intensity={0.4} color={color} />
-
-      <Suspense fallback={<LoadingPlaceholder />}>
-        <AnimatedModel />
-      </Suspense>
+      <Stage color={color} />
     </Canvas>
   );
 }
