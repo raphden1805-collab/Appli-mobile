@@ -3,9 +3,11 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SERVER_URL } from '../config';
 import { Character } from '../components/Character';
 import { HexBackground } from '../components/HexBackground';
-import type { PartyState } from '../types';
+import type { PartyState, User } from '../types';
 
 type Stats = { wins: number; matchesPlayed: number; playtimeMs: number };
+
+const PARTY_SLOT_COUNT = 2; // groupe max 3 (moi + 2 coequipiers)
 
 const TABS = ['LOBBY', 'RANKS', 'LEADERBOARD', 'CUSTOM', 'SERVERS'] as const;
 const SIDEBAR_ITEMS = [
@@ -37,6 +39,7 @@ function formatClock(seconds: number) {
 
 export function LobbyScreen({
   name,
+  user,
   stats,
   queueState,
   queuePosition,
@@ -47,6 +50,7 @@ export function LobbyScreen({
   onOpenSocial,
 }: {
   name: string;
+  user: User | null;
   stats: Stats;
   queueState: 'idle' | 'queued';
   queuePosition: number;
@@ -86,6 +90,8 @@ export function LobbyScreen({
     setStub(label);
     setTimeout(() => setStub(null), 1800);
   };
+
+  const teammates = (party?.members ?? []).filter((m) => m.id !== user?.id);
 
   return (
     <View style={styles.container}>
@@ -127,6 +133,33 @@ export function LobbyScreen({
           <View style={styles.nameTag}>
             <Text style={styles.name}>{name}</Text>
           </View>
+
+          <View style={styles.partyRow}>
+            {Array.from({ length: PARTY_SLOT_COUNT }).map((_, i) => {
+              const mate = teammates[i];
+              if (mate) {
+                return (
+                  <View key={mate.id} style={styles.partySlot}>
+                    <View style={[styles.slotCircle, { borderColor: colorForName(mate.username) }]}>
+                      <Text style={styles.slotInitials}>{mate.username.slice(0, 2).toUpperCase()}</Text>
+                      <View style={[styles.onlineDot, { backgroundColor: mate.online ? '#4caf50' : '#666' }]} />
+                    </View>
+                    <Text style={styles.partySlotLabel} numberOfLines={1}>
+                      {mate.username}
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <Pressable key={`empty-${i}`} style={styles.partySlot} onPress={onOpenSocial}>
+                  <View style={[styles.slotCircle, styles.slotCircleEmpty]}>
+                    <Text style={styles.plusIcon}>+</Text>
+                  </View>
+                  <Text style={styles.partySlotLabel}>Inviter</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         <View style={styles.sidebar}>
@@ -140,12 +173,12 @@ export function LobbyScreen({
       </View>
 
       {stub && (
-        <View style={styles.stubToast}>
+        <View style={styles.stubToast} pointerEvents="none">
           <Text style={styles.stubText}>{stub} : bientot disponible</Text>
         </View>
       )}
 
-      <View style={styles.systemLog}>
+      <View style={styles.systemLog} pointerEvents="none">
         <Text style={styles.systemLogText}>[Systeme] Connexion au serveur etablie.</Text>
       </View>
 
@@ -237,6 +270,22 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   name: { color: '#fdd835', fontWeight: '700', fontSize: 16 },
+  partyRow: { flexDirection: 'row', gap: 20, marginTop: 18 },
+  partySlot: { alignItems: 'center', gap: 6, width: 64 },
+  slotCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(20,23,27,0.75)',
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotCircleEmpty: { borderColor: 'rgba(255,255,255,0.35)', borderStyle: 'dashed' },
+  plusIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 26, fontWeight: '300', marginTop: -2 },
+  slotInitials: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  onlineDot: { position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#0d0d0d' },
+  partySlotLabel: { color: '#aaa', fontSize: 11, fontWeight: '600' },
   sidebar: { width: 100, gap: 10, paddingTop: 4 },
   sidebarButton: {
     backgroundColor: 'rgba(20,23,27,0.65)',

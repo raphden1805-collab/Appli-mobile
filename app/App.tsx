@@ -215,6 +215,7 @@ export default function App() {
       {screen === 'lobby' && (
         <LobbyScreen
           name={playerName}
+          user={user}
           stats={stats}
           queueState={queueState}
           queuePosition={queuePosition}
