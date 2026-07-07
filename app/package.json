@@ -6,6 +6,7 @@
     "@expo/metro-runtime": "~57.0.3",
     "@react-three/fiber": "^9.6.1",
     "expo": "~57.0.2",
+    "expo-asset": "~57.0.3",
     "expo-gl": "~57.0.1",
     "expo-status-bar": "~57.0.0",
     "react": "19.2.3",

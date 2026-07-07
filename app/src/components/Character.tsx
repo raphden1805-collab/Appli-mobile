@@ -1,90 +1,137 @@
-import React, { useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import type { Group, Mesh } from 'three';
+import React, { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { Asset } from 'expo-asset';
+import * as THREE from 'three';
 
-function Figure({ color }: { color: string }) {
-  const bodyRef = useRef<Group>(null);
-  const headRef = useRef<Mesh>(null);
-  const armLRef = useRef<Group>(null);
-  const armRRef = useRef<Group>(null);
+const SKY_TOP = '#3a5a7a';
+const SKY_BOTTOM = '#0c141c';
 
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    if (bodyRef.current) {
-      bodyRef.current.position.y = Math.sin(t * 1.6) * 0.02;
+const modelAsset = Asset.fromModule(require('../../assets/models/CesiumMan.glb'));
+
+const TARGET_HEIGHT = 1.75;
+
+function AnimatedModel() {
+  const gltf = useLoader(GLTFLoader, modelAsset.uri);
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+
+  useEffect(() => {
+    // Normalise l'echelle et recentre le modele sur l'origine (pieds a y=0),
+    // quelle que soit l'unite d'origine du fichier glTF.
+    const box = new THREE.Box3().setFromObject(gltf.scene);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    if (size.y > 0) {
+      const scale = TARGET_HEIGHT / size.y;
+      gltf.scene.scale.setScalar(scale);
     }
-    if (headRef.current) {
-      headRef.current.rotation.y = Math.sin(t * 0.5) * 0.2;
-    }
-    if (armLRef.current) {
-      armLRef.current.rotation.x = Math.sin(t * 1.6) * 0.08 - 0.05;
-    }
-    if (armRRef.current) {
-      armRRef.current.rotation.x = -Math.sin(t * 1.6) * 0.08 - 0.05;
-    }
+    const centeredBox = new THREE.Box3().setFromObject(gltf.scene);
+    gltf.scene.position.x -= (centeredBox.min.x + centeredBox.max.x) / 2;
+    gltf.scene.position.z -= (centeredBox.min.z + centeredBox.max.z) / 2;
+    gltf.scene.position.y -= centeredBox.min.y;
+  }, [gltf]);
+
+  useEffect(() => {
+    if (gltf.animations.length === 0) return;
+    const mixer = new THREE.AnimationMixer(gltf.scene);
+    const action = mixer.clipAction(gltf.animations[0]);
+    action.timeScale = 0.5;
+    action.play();
+    mixerRef.current = mixer;
+    return () => {
+      mixer.stopAllAction();
+    };
+  }, [gltf]);
+
+  useFrame((_, delta) => {
+    mixerRef.current?.update(delta);
   });
 
-  const skin = '#e0a877';
+  return <primitive object={gltf.scene} />;
+}
+
+function LoadingPlaceholder() {
+  return (
+    <mesh position={[0, 0.9, 0]}>
+      <capsuleGeometry args={[0.25, 1, 4, 8]} />
+      <meshStandardMaterial color="#333" />
+    </mesh>
+  );
+}
+
+function GradientSky() {
+  const geometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(16, 11, 1, 1);
+    const top = new THREE.Color(SKY_TOP);
+    const bottom = new THREE.Color(SKY_BOTTOM);
+    // ordre des sommets de PlaneGeometry : haut-gauche, haut-droit, bas-gauche, bas-droit
+    const colors = new Float32Array([
+      top.r, top.g, top.b,
+      top.r, top.g, top.b,
+      bottom.r, bottom.g, bottom.b,
+      bottom.r, bottom.g, bottom.b,
+    ]);
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    return geo;
+  }, []);
 
   return (
-    <group>
-      {/* socle */}
-      <mesh position={[0, 0.02, 0]}>
-        <cylinderGeometry args={[0.55, 0.55, 0.04, 32]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
+    <mesh geometry={geometry} position={[0, 2, -6]}>
+      <meshBasicMaterial vertexColors fog={false} />
+    </mesh>
+  );
+}
 
-      <group ref={bodyRef}>
-        {/* jambes */}
-        <mesh position={[-0.16, 0.5, 0]}>
-          <capsuleGeometry args={[0.12, 0.7, 4, 8]} />
-          <meshStandardMaterial color="#2b2f3a" />
+function DistantHexes() {
+  const hexes = useMemo(
+    () => [
+      { x: -2.4, z: -4, s: 0.9, o: 0.25 },
+      { x: 2.1, z: -4.6, s: 1.1, o: 0.2 },
+      { x: -0.8, z: -5.2, s: 0.7, o: 0.18 },
+      { x: 3.2, z: -3.4, s: 0.6, o: 0.22 },
+    ],
+    []
+  );
+  return (
+    <>
+      {hexes.map((h, i) => (
+        <mesh key={i} position={[h.x, h.s * 0.5, h.z]}>
+          <cylinderGeometry args={[h.s, h.s, 0.08, 6]} />
+          <meshBasicMaterial color="#274863" transparent opacity={h.o} fog={false} />
         </mesh>
-        <mesh position={[0.16, 0.5, 0]}>
-          <capsuleGeometry args={[0.12, 0.7, 4, 8]} />
-          <meshStandardMaterial color="#2b2f3a" />
-        </mesh>
+      ))}
+    </>
+  );
+}
 
-        {/* torse */}
-        <mesh position={[0, 1.25, 0]}>
-          <capsuleGeometry args={[0.22, 0.55, 4, 8]} />
-          <meshStandardMaterial color={color} />
-        </mesh>
-
-        {/* bras */}
-        <group ref={armLRef} position={[-0.3, 1.42, 0]}>
-          <mesh position={[0, -0.32, 0]}>
-            <capsuleGeometry args={[0.08, 0.55, 4, 8]} />
-            <meshStandardMaterial color={color} />
-          </mesh>
-        </group>
-        <group ref={armRRef} position={[0.3, 1.42, 0]}>
-          <mesh position={[0, -0.32, 0]}>
-            <capsuleGeometry args={[0.08, 0.55, 4, 8]} />
-            <meshStandardMaterial color={color} />
-          </mesh>
-        </group>
-
-        {/* tete */}
-        <mesh ref={headRef} position={[0, 1.85, 0]}>
-          <sphereGeometry args={[0.22, 24, 24]} />
-          <meshStandardMaterial color={skin} />
-        </mesh>
-      </group>
-    </group>
+function Ground() {
+  return (
+    <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[2.6, 48]} />
+      <meshStandardMaterial color="#12202c" />
+    </mesh>
   );
 }
 
 export function Character({ color }: { color: string }) {
   return (
     <Canvas
-      camera={{ position: [0, 1.3, 4.2], fov: 32 }}
-      onCreated={({ camera }) => camera.lookAt(0, 1.0, 0)}
+      camera={{ position: [0, 1.3, 3.4], fov: 32 }}
+      onCreated={({ camera }) => camera.lookAt(0, 0.95, 0)}
     >
-      <ambientLight intensity={0.7} />
+      <fog attach="fog" args={[SKY_BOTTOM, 5, 11]} />
+      <GradientSky />
+      <DistantHexes />
+      <Ground />
+
+      <ambientLight intensity={0.6} />
       <directionalLight position={[3, 5, 4]} intensity={1.1} />
-      <directionalLight position={[-3, 2, -2]} intensity={0.3} />
-      <Figure color={color} />
+      <directionalLight position={[-3, 2, -2]} intensity={0.25} />
+      <pointLight position={[0, 1.4, 1.6]} intensity={0.4} color={color} />
+
+      <Suspense fallback={<LoadingPlaceholder />}>
+        <AnimatedModel />
+      </Suspense>
     </Canvas>
   );
 }
