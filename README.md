@@ -1,20 +1,19 @@
 # Appli-mobile
 
-Jeux mobile raph
-
-Jeu de combat 1 vs 1 en ligne, jusqu'a 8 joueurs connectes simultanement.
-Deux joueurs sont mis en relation automatiquement (matchmaking), puis
-s'affrontent en temps reel : deplacement, coup de poing, coup de pied,
-blocage, barres de vie et minuteur de round.
+Jeu de strategie / construction de base sur grille hexagonale, en ligne,
+jusqu'a 10 joueurs par partie. Chaque joueur demarre avec une mairie sur son
+ile partagee, construit des batiments (revenu, civil, production) et fait
+grossir son or en temps reel pendant la duree du match. A la fin, le joueur
+avec le plus d'or gagne.
 
 ## Structure du projet
 
-- `server/` - serveur Node.js (Express + Socket.io) : matchmaking, simulation
-  autoritative des combats (positions, degats, KO), diffusion de l'etat en
-  temps reel.
-- `app/` - application mobile Expo (React Native + TypeScript) : ecrans
-  pseudo / file d'attente / combat / resultat, connectee au serveur via
-  socket.io-client.
+- `server/` - serveur Node.js (Express + Socket.io) : matchmaking, grille
+  hexagonale, economie (revenu par batiment, tick d'or), validation des
+  constructions, diffusion de l'etat de partie en temps reel.
+- `app/` - application mobile Expo (React Native + TypeScript + Three.js /
+  `@react-three/fiber`) : lobby, file d'attente, ile hexagonale en 3D
+  isometrique, menu de construction, minimap, ecran de resultat.
 
 ## Lancer le serveur
 
@@ -22,7 +21,7 @@ blocage, barres de vie et minuteur de round.
 cd server
 npm install
 npm start        # demarre sur http://localhost:3000
-npm test         # lance les tests de la logique de combat
+npm test         # tests de la grille hexagonale et de la logique de partie
 ```
 
 ## Lancer l'application
@@ -32,24 +31,45 @@ cd app
 npm install
 npm run web       # tester rapidement dans un navigateur
 # ou
-npm start         # ouvre Expo (scanner le QR code avec l'app Expo Go)
+npm start          # ouvre Expo (scanner le QR code avec l'app Expo Go)
 ```
 
 Par defaut, l'application se connecte a `http://localhost:3000`. Pour tester
-depuis un vrai telephone (via Expo Go) ou un simulateur, le serveur doit etre
-joignable sur le reseau : definir la variable d'environnement
-`EXPO_PUBLIC_SERVER_URL` avec l'adresse IP locale de la machine qui heberge le
-serveur, par exemple :
+depuis un vrai telephone (via Expo Go), le serveur doit etre joignable sur le
+reseau : definir `EXPO_PUBLIC_SERVER_URL` avec l'adresse IP locale de la
+machine qui heberge le serveur :
 
 ```bash
 EXPO_PUBLIC_SERVER_URL=http://192.168.1.42:3000 npm start
 ```
 
+## Comment jouer
+
+1. Entrer un pseudo, puis appuyer sur **QUEUE** dans le lobby.
+2. Des qu'au moins 2 joueurs sont en file, une partie demarre (decompte de
+   6 secondes) sur une ile hexagonale generee pour l'occasion.
+3. Chaque joueur possede une mairie de depart (+100 or/min) et 1000 or.
+4. Choisir un batiment dans le **BUILD MENU** (Income / Civilian / Produce)
+   puis toucher une case libre de l'ile pour le construire (l'or est deduit
+   immediatement).
+5. Le match dure 5 minutes. A la fin, le joueur avec le plus d'or remporte
+   la partie.
+
 ## Limites connues (MVP)
 
-- Pas de comptes/authentification : le pseudo est libre a chaque partie.
-- Pas de persistance : les parties et le classement ne sont pas sauvegardes.
-- Le serveur est en memoire (un seul processus) : pour un vrai deploiement en
-  production avec plus de 8 joueurs ou de la scalabilite, il faudrait un
-  stockage partage (Redis) et plusieurs instances derriere un load balancer
-  compatible websockets (sticky sessions).
+- Rendu 3D valide en web (Playwright) ; le rendu natif iOS/Android via
+  `expo-gl` n'a pas pu etre teste dans cet environnement (pas de simulateur
+  disponible) meme si l'API utilisee (`@react-three/fiber` + `expo-gl`) est
+  concue pour fonctionner nativement dans Expo Go.
+- Camera fixe (pas de zoom/rotation manuelle) sur la vue 3D.
+- Pas de regle de territoire/adjacence : un batiment peut etre construit sur
+  n'importe quelle case libre de l'ile, pas seulement pres de ses propres
+  batiments.
+- Pas de comptes/authentification, pas de mode ranked fonctionnel (seul le
+  mode "casual" existe), pas de persistance des statistiques entre sessions
+  (elles vivent en memoire le temps de la session app).
+- Missions / Recompenses / Codes sont des emplacements d'interface non
+  fonctionnels ("bientot disponible").
+- Le serveur est en memoire (un seul processus) : pour un vrai deploiement a
+  grande echelle il faudrait un stockage partage (Redis) et plusieurs
+  instances derriere un load balancer compatible websockets.

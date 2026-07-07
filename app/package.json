@@ -4,13 +4,16 @@
   "main": "index.ts",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.3",
+    "@react-three/fiber": "^9.6.1",
     "expo": "~57.0.2",
+    "expo-gl": "~57.0.1",
     "expo-status-bar": "~57.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.0",
     "react-native-web": "^0.21.2",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
