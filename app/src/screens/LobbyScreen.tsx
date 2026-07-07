@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SERVER_URL } from '../config';
+import { Character } from '../components/Character';
 
 type Stats = { wins: number; matchesPlayed: number; playtimeMs: number };
 
@@ -10,6 +11,14 @@ const SIDEBAR_ITEMS = [
   { icon: '🎁', label: 'Recompenses' },
   { icon: '🔗', label: 'Codes' },
 ] as const;
+
+const AVATAR_COLORS = ['#ef5350', '#66bb6a', '#ffa726', '#42a5f5', '#ab47bc', '#26c6da', '#ec407a', '#8d6e63'];
+
+function colorForName(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
 
 function formatPlaytime(ms: number) {
   const totalMinutes = Math.floor(ms / 60000);
@@ -99,8 +108,8 @@ export function LobbyScreen({
         </View>
 
         <View style={styles.center}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarLabel}>{name.slice(0, 2).toUpperCase()}</Text>
+          <View style={styles.characterStage}>
+            <Character color={colorForName(name)} />
           </View>
           <Text style={styles.name}>{name}</Text>
         </View>
@@ -180,18 +189,8 @@ const styles = StyleSheet.create({
   statsPanel: { width: 170 },
   statsTitle: { color: '#888', fontWeight: '700', marginBottom: 8, fontSize: 11, letterSpacing: 1 },
   statLine: { color: '#ccc', marginBottom: 4, fontSize: 13 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#2b2b2b',
-    borderWidth: 2,
-    borderColor: '#e0106b',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarLabel: { color: '#fff', fontSize: 28, fontWeight: '800' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  characterStage: { width: 220, height: 300 },
   name: { color: '#fdd835', fontWeight: '700', fontSize: 16 },
   sidebar: { width: 100, gap: 10, paddingTop: 4 },
   sidebarButton: { backgroundColor: '#1e1e1e', borderRadius: 10, paddingVertical: 10, alignItems: 'center', gap: 4 },
