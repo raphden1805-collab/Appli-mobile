@@ -18,6 +18,7 @@ export type Tile = {
 export type MatchPlayer = {
   id: string;
   name: string;
+  nationId: string;
   color: string;
   gold: number;
   incomePerMin: number;
@@ -33,6 +34,18 @@ export type MatchState = {
   timeRemainingMs: number;
   finished: boolean;
   winnerId: string | null;
+  isTeamMatch: boolean;
   players: MatchPlayer[];
   tiles: Tile[];
 };
+
+export type User = { id: number; username: string };
+
+export type FriendEntry = User & { online: boolean };
+
+export type PendingFriendRequest = { requestId: number; from: User };
+
+export type PartyMemberEntry = User & { online: boolean };
+
+export type PartyState = { partyId: string; members: PartyMemberEntry[] } | null;
+

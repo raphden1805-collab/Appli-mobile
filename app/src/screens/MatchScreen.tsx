@@ -30,7 +30,7 @@ export function MatchScreen({
 }) {
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
   const me = state.players.find((p) => p.id === myId);
-  const colorByOwner = Object.fromEntries(state.players.map((p) => [p.id, p.color]));
+  const colorByOwner = Object.fromEntries(state.players.map((p) => [p.nationId, p.color]));
 
   const handleSelectTile = (tile: Tile) => {
     if (!selectedBuildingId || tile.buildingId) return;
@@ -49,6 +49,11 @@ export function MatchScreen({
         </View>
       </View>
 
+      {state.isTeamMatch && (
+        <View style={styles.teamBadge}>
+          <Text style={styles.teamBadgeText}>EMPIRE COMMUN — vous partagez cette nation</Text>
+        </View>
+      )}
       <PlayerBar players={state.players} myId={myId} />
 
       <View style={styles.mainRow}>
@@ -117,4 +122,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   rejectionText: { color: '#fff', fontWeight: '600', fontSize: 12 },
+  teamBadge: { alignSelf: 'center', backgroundColor: 'rgba(21,101,192,0.3)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 8 },
+  teamBadgeText: { color: '#90caf9', fontSize: 11, fontWeight: '700' },
 });

@@ -3,9 +3,15 @@ const assert = require('node:assert/strict');
 const { Match } = require('../src/match');
 
 function makeMatch() {
-  return new Match('m1', [
-    { id: 'p1', name: 'Alice' },
-    { id: 'p2', name: 'Bob' },
+  return new Match('m1', [[{ id: 'p1', name: 'Alice' }], [{ id: 'p2', name: 'Bob' }]]);
+}
+
+function makeTeamMatch() {
+  return new Match('m2', [
+    [
+      { id: 'p1', name: 'Alice' },
+      { id: 'p2', name: 'Bob' },
+    ],
   ]);
 }
 
@@ -62,7 +68,7 @@ test('placing a building on an occupied tile fails', () => {
 test('placing a building without enough gold fails', () => {
   const match = makeMatch();
   match.activeAt = Date.now() - 1;
-  match.players.get('p1').gold = 10;
+  match.nations.get('p1').gold = 10;
   const emptyTile = match.getState().tiles.find((t) => !t.buildingId);
   const result = match.placeBuilding('p1', emptyTile.q, emptyTile.r, 'house');
   assert.equal(result.error, 'not_enough_gold');
@@ -82,8 +88,40 @@ test('match finishes after its duration and picks the richest player as winner',
   const match = makeMatch();
   match.activeAt = Date.now() - 10 * 60 * 1000; // tres largement depasse la duree du match
   match.lastTickAt = match.activeAt;
-  match.players.get('p2').gold = 5000;
+  match.nations.get('p2').gold = 5000;
   const state = match.tick();
   assert.equal(state.finished, true);
   assert.equal(state.winnerId, 'p2');
+});
+
+test('a team match shares one nation between all its members', () => {
+  const match = makeTeamMatch();
+  const state = match.getState();
+  assert.equal(state.isTeamMatch, true);
+  assert.equal(state.players.length, 2);
+  assert.equal(state.players[0].nationId, state.players[1].nationId);
+  assert.equal(state.players[0].gold, state.players[1].gold);
+
+  const townHallTiles = state.tiles.filter((t) => t.buildingId === 'town_hall');
+  assert.equal(townHallTiles.length, 1, 'the team shares a single town hall');
+});
+
+test('any member of a team can spend the shared gold', () => {
+  const match = makeTeamMatch();
+  match.activeAt = Date.now() - 1;
+  const emptyTile = match.getState().tiles.find((t) => !t.buildingId);
+
+  const result = match.placeBuilding('p2', emptyTile.q, emptyTile.r, 'bank');
+  assert.deepEqual(result, { ok: true });
+
+  const state = match.getState();
+  // p1 et p2 partagent la meme nation : l'or et le revenu baissent/montent pour les deux.
+  assert.equal(state.players.find((p) => p.id === 'p1').gold, 700);
+  assert.equal(state.players.find((p) => p.id === 'p2').gold, 700);
+  assert.equal(state.players[0].incomePerMin, 250);
+});
+
+test('a solo match is not flagged as a team match', () => {
+  const match = makeMatch();
+  assert.equal(match.getState().isTeamMatch, false);
 });

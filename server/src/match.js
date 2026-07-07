@@ -10,20 +10,22 @@ const TOWN_HALL_INCOME_PER_MIN = 100;
 
 const TEAM_COLORS = ['#ef5350', '#66bb6a', '#ffa726', '#42a5f5', '#ab47bc', '#ffee58', '#26c6da', '#8d6e63', '#ec407a', '#78909c'];
 
-function createPlayer(id, name, slotIndex, startHex) {
+function createNation(members, slotIndex, startHex) {
   return {
-    id,
-    name,
+    nationId: members[0].id,
+    members: members.map((m) => ({ id: m.id, name: m.name, connected: true })),
     color: TEAM_COLORS[slotIndex % TEAM_COLORS.length],
     startHex,
     gold: STARTING_GOLD,
     incomePerMin: TOWN_HALL_INCOME_PER_MIN,
-    connected: true,
   };
 }
 
 class Match {
-  constructor(matchId, players) {
+  // `groups` est un tableau de groupes ; chaque groupe est un tableau de
+  // {id, name} qui partagent une seule nation (empire commun). Un joueur
+  // solo est simplement un groupe d'une seule personne.
+  constructor(matchId, groups) {
     this.matchId = matchId;
     this.tiles = new Map();
     for (const { q, r } of generateIsland(ISLAND_RADIUS)) {
@@ -31,14 +33,18 @@ class Match {
     }
 
     const slots = startingPositions(ISLAND_RADIUS, MAX_PLAYERS_PER_MATCH);
-    this.players = new Map();
-    players.forEach((p, index) => {
+    this.nations = new Map();
+    this.memberToNation = new Map();
+
+    groups.forEach((members, index) => {
       const startHex = slots[index];
-      const player = createPlayer(p.id, p.name, index, startHex);
-      this.players.set(p.id, player);
+      const nation = createNation(members, index, startHex);
+      this.nations.set(nation.nationId, nation);
+      for (const m of members) this.memberToNation.set(m.id, nation.nationId);
+
       const tile = this.tiles.get(hexKey(startHex.q, startHex.r));
       if (tile) {
-        tile.ownerId = p.id;
+        tile.ownerId = nation.nationId;
         tile.buildingId = 'town_hall';
       }
     });
@@ -51,15 +57,20 @@ class Match {
   }
 
   get playerIds() {
-    return [...this.players.keys()];
+    return [...this.memberToNation.keys()];
+  }
+
+  get isTeamMatch() {
+    return this.nations.size === 1 && this.nations.values().next().value.members.length > 1;
   }
 
   placeBuilding(playerId, q, r, buildingTypeId) {
     const now = Date.now();
     if (this.finished || now < this.activeAt) return { error: 'match_not_active' };
 
-    const player = this.players.get(playerId);
-    if (!player) return { error: 'unknown_player' };
+    const nationId = this.memberToNation.get(playerId);
+    const nation = nationId && this.nations.get(nationId);
+    if (!nation) return { error: 'unknown_player' };
 
     const building = BUILDING_CATALOG[buildingTypeId];
     if (!building) return { error: 'unknown_building' };
@@ -67,28 +78,31 @@ class Match {
     const tile = this.tiles.get(hexKey(q, r));
     if (!tile) return { error: 'invalid_tile' };
     if (tile.buildingId) return { error: 'tile_occupied' };
-    if (player.gold < building.cost) return { error: 'not_enough_gold' };
+    if (nation.gold < building.cost) return { error: 'not_enough_gold' };
 
-    player.gold -= building.cost;
-    tile.ownerId = playerId;
+    nation.gold -= building.cost;
+    tile.ownerId = nation.nationId;
     tile.buildingId = buildingTypeId;
-    this._recomputeIncome(playerId);
+    this._recomputeIncome(nation.nationId);
     return { ok: true };
   }
 
-  _recomputeIncome(playerId) {
+  _recomputeIncome(nationId) {
     let income = TOWN_HALL_INCOME_PER_MIN;
     for (const tile of this.tiles.values()) {
-      if (tile.ownerId === playerId && tile.buildingId && tile.buildingId !== 'town_hall') {
+      if (tile.ownerId === nationId && tile.buildingId && tile.buildingId !== 'town_hall') {
         income += BUILDING_CATALOG[tile.buildingId].incomePerMin;
       }
     }
-    this.players.get(playerId).incomePerMin = income;
+    this.nations.get(nationId).incomePerMin = income;
   }
 
   removePlayer(playerId) {
-    const player = this.players.get(playerId);
-    if (player) player.connected = false;
+    const nationId = this.memberToNation.get(playerId);
+    const nation = nationId && this.nations.get(nationId);
+    if (!nation) return;
+    const member = nation.members.find((m) => m.id === playerId);
+    if (member) member.connected = false;
   }
 
   tick() {
@@ -98,18 +112,18 @@ class Match {
     if (now >= this.activeAt) {
       const deltaMs = now - Math.max(this.lastTickAt, this.activeAt);
       if (deltaMs > 0) {
-        for (const player of this.players.values()) {
-          player.gold += (player.incomePerMin * deltaMs) / 60000;
+        for (const nation of this.nations.values()) {
+          nation.gold += (nation.incomePerMin * deltaMs) / 60000;
         }
       }
 
       if (now - this.activeAt >= MATCH_DURATION_MS) {
         this.finished = true;
         let best = null;
-        for (const player of this.players.values()) {
-          if (!best || player.gold > best.gold) best = player;
+        for (const nation of this.nations.values()) {
+          if (!best || nation.gold > best.gold) best = nation;
         }
-        this.winnerId = best ? best.id : null;
+        this.winnerId = best ? best.nationId : null;
       }
     }
 
@@ -121,6 +135,22 @@ class Match {
     const now = Date.now();
     const countdownRemainingMs = Math.max(0, this.activeAt - now);
     const elapsedActiveMs = Math.max(0, now - this.activeAt);
+
+    const players = [];
+    for (const nation of this.nations.values()) {
+      for (const member of nation.members) {
+        players.push({
+          id: member.id,
+          name: member.name,
+          nationId: nation.nationId,
+          color: nation.color,
+          gold: Math.floor(nation.gold),
+          incomePerMin: nation.incomePerMin,
+          connected: member.connected,
+        });
+      }
+    }
+
     return {
       matchId: this.matchId,
       phase: this.finished ? 'finished' : countdownRemainingMs > 0 ? 'countdown' : 'active',
@@ -128,14 +158,8 @@ class Match {
       timeRemainingMs: Math.max(0, MATCH_DURATION_MS - elapsedActiveMs),
       finished: this.finished,
       winnerId: this.winnerId,
-      players: [...this.players.values()].map((p) => ({
-        id: p.id,
-        name: p.name,
-        color: p.color,
-        gold: Math.floor(p.gold),
-        incomePerMin: p.incomePerMin,
-        connected: p.connected,
-      })),
+      isTeamMatch: this.isTeamMatch,
+      players,
       tiles: [...this.tiles.values()],
     };
   }

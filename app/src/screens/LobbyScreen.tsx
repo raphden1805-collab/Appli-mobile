@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SERVER_URL } from '../config';
 import { Character } from '../components/Character';
 import { HexBackground } from '../components/HexBackground';
+import type { PartyState } from '../types';
 
 type Stats = { wins: number; matchesPlayed: number; playtimeMs: number };
 
@@ -42,6 +43,8 @@ export function LobbyScreen({
   onQueue,
   onCancelQueue,
   onChangeName,
+  party,
+  onOpenSocial,
 }: {
   name: string;
   stats: Stats;
@@ -50,6 +53,8 @@ export function LobbyScreen({
   onQueue: () => void;
   onCancelQueue: () => void;
   onChangeName: () => void;
+  party: PartyState;
+  onOpenSocial: () => void;
 }) {
   const [stub, setStub] = useState<string | null>(null);
   const [activeMatches, setActiveMatches] = useState<number | null>(null);
@@ -87,14 +92,19 @@ export function LobbyScreen({
       <HexBackground />
 
       <View style={styles.header}>
-        <Text style={styles.brand}>Empire Hex</Text>
-        <View style={styles.tabs}>
-          {TABS.map((tab) => (
-            <Pressable key={tab} onPress={() => tab !== 'LOBBY' && showStub(tab)}>
-              <Text style={[styles.tab, tab === 'LOBBY' && styles.tabActive]}>{tab}</Text>
-            </Pressable>
-          ))}
+        <View>
+          <Text style={styles.brand}>Empire Hex</Text>
+          <View style={styles.tabs}>
+            {TABS.map((tab) => (
+              <Pressable key={tab} onPress={() => tab !== 'LOBBY' && showStub(tab)}>
+                <Text style={[styles.tab, tab === 'LOBBY' && styles.tabActive]}>{tab}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
+        <Pressable style={styles.socialButton} onPress={onOpenSocial}>
+          <Text style={styles.socialButtonLabel}>👥 Amis{party ? ` (${party.members.length}/3)` : ''}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.body}>
@@ -185,11 +195,27 @@ export function LobbyScreen({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
-  header: { padding: 16, gap: 8 },
-  brand: { color: '#fff', fontSize: 20, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 6 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16 },
+  brand: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '800',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowRadius: 6,
+    marginBottom: 8,
+  },
   tabs: { flexDirection: 'row', gap: 18 },
   tab: { color: '#888', fontWeight: '700', fontSize: 12, letterSpacing: 0.5 },
   tabActive: { color: '#fff', textDecorationLine: 'underline' },
+  socialButton: {
+    backgroundColor: 'rgba(21,101,192,0.85)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  socialButtonLabel: { color: '#fff', fontWeight: '700', fontSize: 12 },
   body: { flex: 1, flexDirection: 'row', paddingHorizontal: 16, gap: 16 },
   statsPanel: {
     width: 180,
