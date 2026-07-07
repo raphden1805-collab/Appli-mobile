@@ -5,7 +5,7 @@ import { Asset } from 'expo-asset';
 import * as THREE from 'three';
 import type { Group } from 'three';
 
-const modelAsset = Asset.fromModule(require('../../assets/models/CesiumMan.glb'));
+const modelAsset = Asset.fromModule(require('../../assets/models/Soldier.glb'));
 
 const TARGET_HEIGHT = 1.75;
 const TURN_SPEED = 0.12;
@@ -16,7 +16,8 @@ function AnimatedModel() {
 
   useEffect(() => {
     // Normalise l'echelle et recentre le modele sur l'origine (pieds a y=0),
-    // quelle que soit l'unite d'origine du fichier glTF.
+    // quelle que soit l'unite d'origine du fichier glTF. Le modele fait face
+    // a -Z par defaut : on le retourne pour qu'il regarde la camera.
     const box = new THREE.Box3().setFromObject(gltf.scene);
     const size = new THREE.Vector3();
     box.getSize(size);
@@ -24,6 +25,7 @@ function AnimatedModel() {
       const scale = TARGET_HEIGHT / size.y;
       gltf.scene.scale.setScalar(scale);
     }
+    gltf.scene.rotation.y = Math.PI;
     const centeredBox = new THREE.Box3().setFromObject(gltf.scene);
     gltf.scene.position.x -= (centeredBox.min.x + centeredBox.max.x) / 2;
     gltf.scene.position.z -= (centeredBox.min.z + centeredBox.max.z) / 2;
@@ -32,10 +34,9 @@ function AnimatedModel() {
 
   useEffect(() => {
     if (gltf.animations.length === 0) return;
+    const idleClip = gltf.animations.find((a) => /idle/i.test(a.name)) ?? gltf.animations[0];
     const mixer = new THREE.AnimationMixer(gltf.scene);
-    const action = mixer.clipAction(gltf.animations[0]);
-    action.timeScale = 0.45;
-    action.play();
+    mixer.clipAction(idleClip).play();
     mixerRef.current = mixer;
     return () => {
       mixer.stopAllAction();

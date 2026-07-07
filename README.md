@@ -73,12 +73,13 @@ EXPO_PUBLIC_SERVER_URL=http://192.168.1.42:3000 npm start
 - Le serveur est en memoire (un seul processus) : pour un vrai deploiement a
   grande echelle il faudrait un stockage partage (Redis) et plusieurs
   instances derriere un load balancer compatible websockets.
-- Le personnage anime du lobby joue le seul clip d'animation fourni par le
-  modele (une marche), il n'y a pas encore d'etats multiples (idle/marche/
-  victoire).
+- Le personnage anime du lobby ne joue que son clip "Idle" ; les autres
+  animations fournies par le modele (marche, course) ne sont pas encore
+  utilisees ailleurs dans l'appli.
 
 ## Credits
 
-Le personnage 3D texture du lobby (`app/assets/models/CesiumMan.glb`) est le
-modele d'exemple officiel Khronos glTF "Cesium Man", donne par Cesium,
-sous licence [Creative Commons Attribution 4.0](http://creativecommons.org/licenses/by/4.0/).
+Le personnage 3D texture et anime du lobby (`app/assets/models/Soldier.glb`)
+provient des exemples officiels du projet [three.js](https://github.com/mrdoob/three.js)
+(licence MIT), modele originellement issu de [Mixamo](https://www.mixamo.com/)
+(Adobe).
