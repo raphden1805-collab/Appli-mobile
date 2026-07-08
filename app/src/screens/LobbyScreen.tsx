@@ -34,7 +34,7 @@ function renderPartySlot(mate: { id: number; username: string; online: boolean }
       ) : (
         <Text style={styles.plusIcon}>+</Text>
       )}
-      <GroundDisc color={color} dashed={!mate} width={140} height={50} />
+      <GroundDisc color={color} dashed={!mate} width={96} height={34} />
       <Text style={styles.partySlotLabel} numberOfLines={1}>
         {mate ? mate.username : 'Inviter'}
       </Text>
@@ -208,8 +208,8 @@ export function LobbyScreen({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
   bgImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  header: { paddingTop: 6, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: 'rgba(8,10,12,0.35)' },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  header: { paddingTop: 0, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: 'rgba(8,10,12,0.35)' },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   brand: {
     color: '#fff',
     fontSize: 20,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   name: { color: '#fdd835', fontWeight: '700', fontSize: 16 },
   centerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 20 },
   characterColumn: { alignItems: 'center', gap: 8 },
-  partySlot: { alignItems: 'center', gap: 4, width: 150, marginBottom: 66 },
+  partySlot: { alignItems: 'center', gap: 4, width: 110, marginBottom: 66 },
   slotTop: { alignItems: 'center', justifyContent: 'center', height: 32 },
   plusIcon: { color: 'rgba(255,255,255,0.55)', fontSize: 28, fontWeight: '300', height: 32, lineHeight: 32 },
   slotBadge: {
