@@ -3,11 +3,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SERVER_URL } from '../config';
 import { Character } from '../components/Character';
 import { HexBackground } from '../components/HexBackground';
+import { GroundDisc } from '../components/GroundDisc';
 import type { PartyState, User } from '../types';
 
 type Stats = { wins: number; matchesPlayed: number; playtimeMs: number };
-
-const PARTY_SLOT_COUNT = 2; // groupe max 3 (moi + 2 coequipiers)
 
 const TABS = ['LOBBY', 'RANKS', 'LEADERBOARD', 'CUSTOM', 'SERVERS'] as const;
 const SIDEBAR_ITEMS = [
@@ -35,6 +34,28 @@ function formatClock(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function renderPartySlot(mate: { id: number; username: string; online: boolean } | undefined, onOpenSocial: () => void) {
+  const color = mate ? colorForName(mate.username) : '#ffffff';
+  return (
+    <Pressable style={styles.partySlot} onPress={onOpenSocial} disabled={Boolean(mate)}>
+      {mate ? (
+        <View style={styles.slotTop}>
+          <View style={[styles.slotBadge, { borderColor: color }]}>
+            <Text style={styles.slotInitials}>{mate.username.slice(0, 2).toUpperCase()}</Text>
+            <View style={[styles.onlineDot, { backgroundColor: mate.online ? '#4caf50' : '#666' }]} />
+          </View>
+        </View>
+      ) : (
+        <Text style={styles.plusIcon}>+</Text>
+      )}
+      <GroundDisc color={color} dashed={!mate} />
+      <Text style={styles.partySlotLabel} numberOfLines={1}>
+        {mate ? mate.username : 'Inviter'}
+      </Text>
+    </Pressable>
+  );
 }
 
 export function LobbyScreen({
@@ -127,38 +148,19 @@ export function LobbyScreen({
         </View>
 
         <View style={styles.center}>
-          <View style={styles.characterStage}>
-            <Character color={colorForName(name)} />
-          </View>
-          <View style={styles.nameTag}>
-            <Text style={styles.name}>{name}</Text>
-          </View>
+          <View style={styles.centerRow}>
+            {renderPartySlot(teammates[0], onOpenSocial)}
 
-          <View style={styles.partyRow}>
-            {Array.from({ length: PARTY_SLOT_COUNT }).map((_, i) => {
-              const mate = teammates[i];
-              if (mate) {
-                return (
-                  <View key={mate.id} style={styles.partySlot}>
-                    <View style={[styles.slotCircle, { borderColor: colorForName(mate.username) }]}>
-                      <Text style={styles.slotInitials}>{mate.username.slice(0, 2).toUpperCase()}</Text>
-                      <View style={[styles.onlineDot, { backgroundColor: mate.online ? '#4caf50' : '#666' }]} />
-                    </View>
-                    <Text style={styles.partySlotLabel} numberOfLines={1}>
-                      {mate.username}
-                    </Text>
-                  </View>
-                );
-              }
-              return (
-                <Pressable key={`empty-${i}`} style={styles.partySlot} onPress={onOpenSocial}>
-                  <View style={[styles.slotCircle, styles.slotCircleEmpty]}>
-                    <Text style={styles.plusIcon}>+</Text>
-                  </View>
-                  <Text style={styles.partySlotLabel}>Inviter</Text>
-                </Pressable>
-              );
-            })}
+            <View style={styles.characterColumn}>
+              <View style={styles.characterStage}>
+                <Character color={colorForName(name)} />
+              </View>
+              <View style={styles.nameTag}>
+                <Text style={styles.name}>{name}</Text>
+              </View>
+            </View>
+
+            {renderPartySlot(teammates[1], onOpenSocial)}
           </View>
         </View>
 
@@ -270,22 +272,23 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   name: { color: '#fdd835', fontWeight: '700', fontSize: 16 },
-  partyRow: { flexDirection: 'row', gap: 20, marginTop: 18 },
-  partySlot: { alignItems: 'center', gap: 6, width: 64 },
-  slotCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(20,23,27,0.75)',
+  centerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 12 },
+  characterColumn: { alignItems: 'center', gap: 8 },
+  partySlot: { alignItems: 'center', gap: 4, width: 120, marginBottom: 44 },
+  slotTop: { alignItems: 'center', justifyContent: 'center', height: 32 },
+  plusIcon: { color: 'rgba(255,255,255,0.55)', fontSize: 28, fontWeight: '300', height: 32, lineHeight: 32 },
+  slotBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(20,23,27,0.85)',
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  slotCircleEmpty: { borderColor: 'rgba(255,255,255,0.35)', borderStyle: 'dashed' },
-  plusIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 26, fontWeight: '300', marginTop: -2 },
-  slotInitials: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  onlineDot: { position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#0d0d0d' },
-  partySlotLabel: { color: '#aaa', fontSize: 11, fontWeight: '600' },
+  slotInitials: { color: '#fff', fontWeight: '800', fontSize: 11 },
+  onlineDot: { position: 'absolute', bottom: -2, right: -2, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#0d0d0d' },
+  partySlotLabel: { color: '#aaa', fontSize: 11, fontWeight: '600', marginTop: 2 },
   sidebar: { width: 100, gap: 10, paddingTop: 4 },
   sidebarButton: {
     backgroundColor: 'rgba(20,23,27,0.65)',
