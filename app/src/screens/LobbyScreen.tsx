@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SERVER_URL } from '../config';
 import { Character } from '../components/Character';
-import { HexBackground } from '../components/HexBackground';
+import { SciFiBackground } from '../components/SciFiBackground';
 import { GroundDisc } from '../components/GroundDisc';
 import { colorForName } from '../colorForName';
 import type { PartyState, User } from '../types';
@@ -99,7 +99,7 @@ export function LobbyScreen({
 
   return (
     <View style={styles.container}>
-      <HexBackground />
+      <SciFiBackground />
 
       <View style={styles.header}>
         <View style={styles.headerTop}>

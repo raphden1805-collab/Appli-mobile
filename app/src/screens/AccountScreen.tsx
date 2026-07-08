@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { HexBackground } from '../components/HexBackground';
+import { SciFiBackground } from '../components/SciFiBackground';
 import { colorForName } from '../colorForName';
 import type { Stats, User } from '../types';
 
@@ -28,7 +28,7 @@ export function AccountScreen({
 
   return (
     <View style={styles.container}>
-      <HexBackground />
+      <SciFiBackground />
 
       <View style={styles.header}>
         <Text style={styles.title}>Mon compte</Text>
