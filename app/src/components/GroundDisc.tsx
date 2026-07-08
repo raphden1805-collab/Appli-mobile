@@ -2,14 +2,21 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 
-const WIDTH = 110;
-const HEIGHT = 40;
-
-export function GroundDisc({ color, dashed }: { color: string; dashed?: boolean }) {
+export function GroundDisc({
+  color,
+  dashed,
+  width = 110,
+  height = 40,
+}: {
+  color: string;
+  dashed?: boolean;
+  width?: number;
+  height?: number;
+}) {
   const gradientId = `ground-${color.replace('#', '')}${dashed ? '-d' : ''}`;
   return (
-    <View style={{ width: WIDTH, height: HEIGHT }}>
-      <Svg width={WIDTH} height={HEIGHT}>
+    <View style={{ width, height }}>
+      <Svg width={width} height={height}>
         <Defs>
           <RadialGradient id={gradientId} cx="50%" cy="50%" r="55%">
             <Stop offset="0%" stopColor={color} stopOpacity={dashed ? 0.12 : 0.35} />
@@ -17,12 +24,12 @@ export function GroundDisc({ color, dashed }: { color: string; dashed?: boolean 
             <Stop offset="100%" stopColor={color} stopOpacity={0} />
           </RadialGradient>
         </Defs>
-        <Ellipse cx={WIDTH / 2} cy={HEIGHT / 2} rx={WIDTH / 2 - 2} ry={HEIGHT / 2 - 2} fill={`url(#${gradientId})`} />
+        <Ellipse cx={width / 2} cy={height / 2} rx={width / 2 - 2} ry={height / 2 - 2} fill={`url(#${gradientId})`} />
         <Ellipse
-          cx={WIDTH / 2}
-          cy={HEIGHT / 2}
-          rx={WIDTH / 2 - 4}
-          ry={HEIGHT / 2 - 4}
+          cx={width / 2}
+          cy={height / 2}
+          rx={width / 2 - 4}
+          ry={height / 2 - 4}
           fill="none"
           stroke={color}
           strokeOpacity={dashed ? 0.35 : 0.75}

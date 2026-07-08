@@ -50,7 +50,7 @@ function renderPartySlot(mate: { id: number; username: string; online: boolean }
       ) : (
         <Text style={styles.plusIcon}>+</Text>
       )}
-      <GroundDisc color={color} dashed={!mate} />
+      <GroundDisc color={color} dashed={!mate} width={140} height={50} />
       <Text style={styles.partySlotLabel} numberOfLines={1}>
         {mate ? mate.username : 'Inviter'}
       </Text>
@@ -251,20 +251,22 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.15)',
   },
   socialButtonLabel: { color: '#fff', fontWeight: '700', fontSize: 12 },
-  body: { flex: 1, flexDirection: 'row', paddingHorizontal: 16, gap: 16 },
+  body: { flex: 1, position: 'relative' },
   statsPanel: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
     width: 180,
     backgroundColor: 'rgba(14,16,19,0.6)',
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
-    alignSelf: 'flex-start',
   },
   statsTitle: { color: '#8a8f96', fontWeight: '700', marginBottom: 8, fontSize: 11, letterSpacing: 1 },
   statLine: { color: '#d8dade', marginBottom: 4, fontSize: 13 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  characterStage: { width: 280, height: 380 },
+  characterStage: { width: 360, height: 480 },
   nameTag: {
     backgroundColor: 'rgba(10,12,14,0.55)',
     borderRadius: 8,
@@ -272,9 +274,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   name: { color: '#fdd835', fontWeight: '700', fontSize: 16 },
-  centerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 12 },
+  centerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 20 },
   characterColumn: { alignItems: 'center', gap: 8 },
-  partySlot: { alignItems: 'center', gap: 4, width: 120, marginBottom: 44 },
+  partySlot: { alignItems: 'center', gap: 4, width: 150, marginBottom: 66 },
   slotTop: { alignItems: 'center', justifyContent: 'center', height: 32 },
   plusIcon: { color: 'rgba(255,255,255,0.55)', fontSize: 28, fontWeight: '300', height: 32, lineHeight: 32 },
   slotBadge: {
@@ -289,7 +291,7 @@ const styles = StyleSheet.create({
   slotInitials: { color: '#fff', fontWeight: '800', fontSize: 11 },
   onlineDot: { position: 'absolute', bottom: -2, right: -2, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#0d0d0d' },
   partySlotLabel: { color: '#aaa', fontSize: 11, fontWeight: '600', marginTop: 2 },
-  sidebar: { width: 100, gap: 10, paddingTop: 4 },
+  sidebar: { position: 'absolute', top: 0, right: 16, width: 100, gap: 10, paddingTop: 4 },
   sidebarButton: {
     backgroundColor: 'rgba(20,23,27,0.65)',
     borderRadius: 10,
