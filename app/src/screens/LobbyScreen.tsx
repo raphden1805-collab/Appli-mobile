@@ -208,8 +208,8 @@ export function LobbyScreen({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
   bgImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  header: { padding: 16, backgroundColor: 'rgba(8,10,12,0.35)' },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  header: { paddingTop: 6, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: 'rgba(8,10,12,0.35)' },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   brand: {
     color: '#fff',
     fontSize: 20,
@@ -217,17 +217,17 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowRadius: 6,
   },
-  tabs: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
+  tabs: { flexDirection: 'row', gap: 3 },
   tab: {
     backgroundColor: 'rgba(20,23,27,0.7)',
     borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
   },
   tabActive: { backgroundColor: 'rgba(21,101,192,0.85)', borderColor: 'rgba(255,255,255,0.2)' },
-  tabLabel: { color: '#999', fontWeight: '700', fontSize: 11, letterSpacing: 0.5 },
+  tabLabel: { color: '#999', fontWeight: '700', fontSize: 14, letterSpacing: 0.5 },
   tabLabelActive: { color: '#fff' },
   socialButton: {
     backgroundColor: 'rgba(21,101,192,0.85)',
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   slotInitials: { color: '#fff', fontWeight: '800', fontSize: 11 },
   onlineDot: { position: 'absolute', bottom: -2, right: -2, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#0d0d0d' },
   partySlotLabel: { color: '#aaa', fontSize: 11, fontWeight: '600', marginTop: 2 },
-  sidebar: { position: 'absolute', top: 0, right: 16, width: 100, gap: 10, paddingTop: 4 },
+  sidebar: { position: 'absolute', top: 100, right: 16, width: 100, gap: 10 },
   sidebarButton: {
     backgroundColor: 'rgba(20,23,27,0.65)',
     borderRadius: 10,
