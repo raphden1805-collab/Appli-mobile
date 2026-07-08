@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SERVER_URL } from '../config';
-import { Character } from '../components/Character';
-import { SciFiBackground } from '../components/SciFiBackground';
 import { GroundDisc } from '../components/GroundDisc';
 import { colorForName } from '../colorForName';
 import type { PartyState, User } from '../types';
+
+const BG = require('../../assets/backgrounds/lobby-bg.jpg');
 
 const TABS = ['LOBBY', 'RANKS', 'LEADERBOARD', 'BOUTIQUE', 'CUSTOM', 'SERVERS', 'COMPTE'] as const;
 const SIDEBAR_ITEMS = [
@@ -99,7 +99,7 @@ export function LobbyScreen({
 
   return (
     <View style={styles.container}>
-      <SciFiBackground />
+      <Image source={BG} style={styles.bgImage} resizeMode="cover" />
 
       <View style={styles.header}>
         <View style={styles.headerTop}>
@@ -131,9 +131,7 @@ export function LobbyScreen({
             {renderPartySlot(teammates[0], onOpenSocial)}
 
             <View style={styles.characterColumn}>
-              <View style={styles.characterStage}>
-                <Character color={colorForName(name)} />
-              </View>
+              <View style={styles.characterStage} />
               <View style={styles.nameTag}>
                 <Text style={styles.name}>{name}</Text>
               </View>
@@ -209,6 +207,7 @@ export function LobbyScreen({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
+  bgImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
   header: { padding: 16 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   brand: {
