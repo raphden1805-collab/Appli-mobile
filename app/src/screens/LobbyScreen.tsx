@@ -119,19 +119,19 @@ export function LobbyScreen({
       <HexBackground />
 
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerTop}>
           <Text style={styles.brand}>Empire Hex</Text>
-          <View style={styles.tabs}>
-            {TABS.map((tab) => (
-              <Pressable key={tab} onPress={() => tab !== 'LOBBY' && showStub(tab)}>
-                <Text style={[styles.tab, tab === 'LOBBY' && styles.tabActive]}>{tab}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <Pressable style={styles.socialButton} onPress={onOpenSocial}>
+            <Text style={styles.socialButtonLabel}>👥 Amis{party ? ` (${party.members.length}/3)` : ''}</Text>
+          </Pressable>
         </View>
-        <Pressable style={styles.socialButton} onPress={onOpenSocial}>
-          <Text style={styles.socialButtonLabel}>👥 Amis{party ? ` (${party.members.length}/3)` : ''}</Text>
-        </Pressable>
+        <View style={styles.tabs}>
+          {TABS.map((tab) => (
+            <Pressable key={tab} onPress={() => tab !== 'LOBBY' && showStub(tab)}>
+              <Text style={[styles.tab, tab === 'LOBBY' && styles.tabActive]}>{tab}</Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       <View style={styles.body}>
@@ -185,7 +185,7 @@ export function LobbyScreen({
       </View>
 
       <View style={styles.footer}>
-        <View style={styles.footerLeft}>
+        <View style={styles.footerCenter}>
           <View style={styles.modeBox}>
             <Text style={styles.modeLabel}>SELECTED MODE</Text>
             <Text style={styles.modeValue}>CASUAL</Text>
@@ -196,7 +196,7 @@ export function LobbyScreen({
             </Pressable>
             {queueState === 'idle' ? (
               <Pressable style={styles.primaryButton} onPress={onQueue}>
-                <Text style={styles.primaryLabel}>QUEUE</Text>
+                <Text style={styles.primaryLabel}>PLAY</Text>
               </Pressable>
             ) : (
               <Pressable style={styles.cancelButton} onPress={onCancelQueue}>
@@ -230,16 +230,16 @@ export function LobbyScreen({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16 },
+  header: { padding: 16 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   brand: {
     color: '#fff',
     fontSize: 20,
     fontWeight: '800',
     textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowRadius: 6,
-    marginBottom: 8,
   },
-  tabs: { flexDirection: 'row', gap: 18 },
+  tabs: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
   tab: { color: '#888', fontWeight: '700', fontSize: 12, letterSpacing: 0.5 },
   tabActive: { color: '#fff', textDecorationLine: 'underline' },
   socialButton: {
@@ -314,10 +314,9 @@ const styles = StyleSheet.create({
   stubText: { color: '#aaa', fontSize: 12 },
   systemLog: { paddingHorizontal: 16, marginBottom: 8 },
   systemLogText: { color: '#4caf50', fontSize: 11, textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4 },
-  footer: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', padding: 16 },
-  footerLeft: { flex: 1, gap: 10 },
+  footer: { height: 116, paddingHorizontal: 16, alignItems: 'flex-end', justifyContent: 'flex-end' },
+  footerCenter: { position: 'absolute', left: 0, right: 0, bottom: 16, alignItems: 'center', gap: 10 },
   modeBox: {
-    alignSelf: 'flex-start',
     backgroundColor: 'rgba(18,20,24,0.7)',
     borderRadius: 8,
     paddingHorizontal: 14,
@@ -325,25 +324,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
   },
-  modeLabel: { color: '#888', fontSize: 10, letterSpacing: 1 },
-  modeValue: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  buttonRow: { flexDirection: 'row', gap: 12 },
+  modeLabel: { color: '#888', fontSize: 10, letterSpacing: 1, textAlign: 'center' },
+  modeValue: { color: '#fff', fontWeight: '800', fontSize: 14, textAlign: 'center' },
+  buttonRow: { flexDirection: 'row', gap: 10 },
   secondaryButton: {
-    flex: 1,
+    width: 96,
     backgroundColor: 'rgba(24,27,31,0.8)',
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 10,
+    paddingVertical: 11,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
   },
-  secondaryLabel: { color: '#ccc', fontWeight: '700' },
-  primaryButton: { flex: 1, backgroundColor: '#1565c0', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
-  cancelButton: { flex: 1, backgroundColor: '#c62828', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
-  primaryLabel: { color: '#fff', fontWeight: '800', letterSpacing: 1 },
+  secondaryLabel: { color: '#ccc', fontWeight: '700', fontSize: 12 },
+  primaryButton: { width: 96, backgroundColor: '#1565c0', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
+  cancelButton: { width: 96, backgroundColor: '#c62828', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
+  primaryLabel: { color: '#fff', fontWeight: '800', letterSpacing: 1, fontSize: 12 },
   leaveButton: { opacity: 0.4 },
-  leaveLabel: { color: '#888', fontWeight: '700' },
-  activeMatches: { color: '#888', fontSize: 11, marginLeft: 16 },
+  leaveLabel: { color: '#888', fontWeight: '700', fontSize: 12 },
+  activeMatches: { color: '#888', fontSize: 11 },
   queueCard: {
     position: 'absolute',
     right: 16,
