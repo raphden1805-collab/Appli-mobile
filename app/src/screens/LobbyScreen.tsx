@@ -8,7 +8,7 @@ import type { PartyState, User } from '../types';
 const BG = require('../../assets/backgrounds/lobby-bg.jpg');
 
 const TABS = ['LOBBY', 'RANKS', 'LEADERBOARD', 'BOUTIQUE', 'CUSTOM', 'SERVERS', 'COMPTE'] as const;
-const SIDEBAR_ITEMS = [
+const SIDEBAR_STUBS = [
   { icon: '📜', label: 'Missions' },
   { icon: '🎁', label: 'Recompenses' },
   { icon: '🔗', label: 'Codes' },
@@ -102,12 +102,7 @@ export function LobbyScreen({
       <Image source={BG} style={styles.bgImage} resizeMode="cover" />
 
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <Text style={styles.brand}>Empire Hex</Text>
-          <Pressable style={styles.socialButton} onPress={onOpenSocial}>
-            <Text style={styles.socialButtonLabel}>👥 Amis{party ? ` (${party.members.length}/3)` : ''}</Text>
-          </Pressable>
-        </View>
+        <Text style={styles.brand}>Empire Hex</Text>
         <View style={styles.tabs}>
           {TABS.map((tab) => (
             <Pressable
@@ -142,7 +137,11 @@ export function LobbyScreen({
         </View>
 
         <View style={styles.sidebar}>
-          {SIDEBAR_ITEMS.map(({ icon, label }) => (
+          <Pressable style={styles.sidebarButton} onPress={onOpenSocial}>
+            <Text style={styles.sidebarIcon}>👥</Text>
+            <Text style={styles.sidebarLabel}>Amis{party ? ` (${party.members.length}/3)` : ''}</Text>
+          </Pressable>
+          {SIDEBAR_STUBS.map(({ icon, label }) => (
             <Pressable key={label} style={styles.sidebarButton} onPress={() => showStub(label)}>
               <Text style={styles.sidebarIcon}>{icon}</Text>
               <Text style={styles.sidebarLabel}>{label}</Text>
@@ -209,11 +208,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
   bgImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
   header: { paddingTop: 0, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: 'rgba(8,10,12,0.35)' },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   brand: {
     color: '#fff',
     fontSize: 20,
     fontWeight: '800',
+    marginBottom: 4,
     textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowRadius: 6,
   },
@@ -229,15 +228,6 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: 'rgba(21,101,192,0.85)', borderColor: 'rgba(255,255,255,0.2)' },
   tabLabel: { color: '#999', fontWeight: '700', fontSize: 14, letterSpacing: 0.5 },
   tabLabelActive: { color: '#fff' },
-  socialButton: {
-    backgroundColor: 'rgba(21,101,192,0.85)',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  socialButtonLabel: { color: '#fff', fontWeight: '700', fontSize: 12 },
   body: { flex: 1, position: 'relative' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   characterStage: { width: 360, height: 480 },
@@ -265,7 +255,7 @@ const styles = StyleSheet.create({
   slotInitials: { color: '#fff', fontWeight: '800', fontSize: 11 },
   onlineDot: { position: 'absolute', bottom: -2, right: -2, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#0d0d0d' },
   partySlotLabel: { color: '#aaa', fontSize: 11, fontWeight: '600', marginTop: 2 },
-  sidebar: { position: 'absolute', top: 100, right: 16, width: 100, gap: 10 },
+  sidebar: { position: 'absolute', top: 74, right: 16, width: 100, gap: 10 },
   sidebarButton: {
     backgroundColor: 'rgba(20,23,27,0.65)',
     borderRadius: 10,
