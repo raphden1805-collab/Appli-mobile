@@ -49,3 +49,5 @@ export type PartyMemberEntry = User & { online: boolean };
 
 export type PartyState = { partyId: string; members: PartyMemberEntry[] } | null;
 
+export type Stats = { wins: number; matchesPlayed: number; playtimeMs: number };
+

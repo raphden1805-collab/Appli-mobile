@@ -130,6 +130,18 @@ io.on('connection', (socket) => {
     callback?.({ ok: true, user });
   });
 
+  socket.on('logout', (_, callback) => {
+    const user = socketUser.get(socket.id);
+    if (user) {
+      socketUser.delete(socket.id);
+      if (onlineSockets.get(user.id) === socket.id) {
+        onlineSockets.delete(user.id);
+        for (const friend of friends.listFriends(user.id)) sendFriendsUpdate(friend.id);
+      }
+    }
+    callback?.({ ok: true });
+  });
+
   // --- Amis ---
   socket.on('friend_request_send', ({ username } = {}, callback) => {
     const user = requireAuth(socket, callback);

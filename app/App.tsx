@@ -8,6 +8,7 @@ import { NameScreen } from './src/screens/NameScreen';
 import { LobbyScreen } from './src/screens/LobbyScreen';
 import { MatchScreen } from './src/screens/MatchScreen';
 import { ResultScreen } from './src/screens/ResultScreen';
+import { AccountScreen } from './src/screens/AccountScreen';
 import { SocialPanel } from './src/components/SocialPanel';
 import type {
   BuildingCatalog,
@@ -15,11 +16,12 @@ import type {
   MatchState,
   PartyState,
   PendingFriendRequest,
+  Stats,
   Tile,
   User,
 } from './src/types';
 
-type Screen = 'auth' | 'name' | 'lobby' | 'match' | 'result';
+type Screen = 'auth' | 'name' | 'lobby' | 'match' | 'result' | 'account';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('auth');
@@ -32,7 +34,7 @@ export default function App() {
   const [islandRadius, setIslandRadius] = useState(6);
   const [serverFull, setServerFull] = useState(false);
   const [rejectionMessage, setRejectionMessage] = useState<string | null>(null);
-  const [stats, setStats] = useState({ wins: 0, matchesPlayed: 0, playtimeMs: 0 });
+  const [stats, setStats] = useState<Stats>({ wins: 0, matchesPlayed: 0, playtimeMs: 0 });
 
   const [socialVisible, setSocialVisible] = useState(false);
   const [friends, setFriends] = useState<FriendEntry[]>([]);
@@ -199,6 +201,17 @@ export default function App() {
     setScreen('auth');
   }, []);
 
+  const openAccount = useCallback(() => setScreen('account'), []);
+  const logout = useCallback(() => {
+    getSocket().emit('logout', {}, () => {
+      setUser(null);
+      setParty(null);
+      setFriends([]);
+      setPendingRequests([]);
+      setScreen('auth');
+    });
+  }, []);
+
   if (serverFull) {
     return (
       <SafeAreaView style={styles.full}>
@@ -221,10 +234,13 @@ export default function App() {
           onQueue={startQueue}
           onCancelQueue={cancelQueue}
           onChangeName={() => setScreen(user ? 'auth' : 'name')}
-          onOpenAccount={() => setScreen('auth')}
+          onOpenAccount={openAccount}
           party={party}
           onOpenSocial={openSocial}
         />
+      )}
+      {screen === 'account' && (
+        <AccountScreen user={user} stats={stats} onBack={() => setScreen('lobby')} onLogin={() => setScreen('auth')} onLogout={logout} />
       )}
       {screen === 'match' && matchState && (
         <MatchScreen
