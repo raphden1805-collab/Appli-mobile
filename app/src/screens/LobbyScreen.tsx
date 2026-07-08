@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SERVER_URL } from '../config';
 import { Character } from '../components/Character';
@@ -6,9 +6,7 @@ import { HexBackground } from '../components/HexBackground';
 import { GroundDisc } from '../components/GroundDisc';
 import type { PartyState, User } from '../types';
 
-type Stats = { wins: number; matchesPlayed: number; playtimeMs: number };
-
-const TABS = ['LOBBY', 'RANKS', 'LEADERBOARD', 'CUSTOM', 'SERVERS'] as const;
+const TABS = ['LOBBY', 'RANKS', 'LEADERBOARD', 'BOUTIQUE', 'CUSTOM', 'SERVERS', 'COMPTE'] as const;
 const SIDEBAR_ITEMS = [
   { icon: '📜', label: 'Missions' },
   { icon: '🎁', label: 'Recompenses' },
@@ -21,13 +19,6 @@ function colorForName(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i += 1) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-}
-
-function formatPlaytime(ms: number) {
-  const totalMinutes = Math.floor(ms / 60000);
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return h > 0 ? `${h}h${m.toString().padStart(2, '0')}` : `${m}min`;
 }
 
 function formatClock(seconds: number) {
@@ -61,30 +52,29 @@ function renderPartySlot(mate: { id: number; username: string; online: boolean }
 export function LobbyScreen({
   name,
   user,
-  stats,
   queueState,
   queuePosition,
   onQueue,
   onCancelQueue,
   onChangeName,
+  onOpenAccount,
   party,
   onOpenSocial,
 }: {
   name: string;
   user: User | null;
-  stats: Stats;
   queueState: 'idle' | 'queued';
   queuePosition: number;
   onQueue: () => void;
   onCancelQueue: () => void;
   onChangeName: () => void;
+  onOpenAccount: () => void;
   party: PartyState;
   onOpenSocial: () => void;
 }) {
   const [stub, setStub] = useState<string | null>(null);
   const [activeMatches, setActiveMatches] = useState<number | null>(null);
   const [searchSeconds, setSearchSeconds] = useState(0);
-  const sessionStartRef = useRef(new Date());
 
   useEffect(() => {
     const poll = () => {
@@ -127,26 +117,22 @@ export function LobbyScreen({
         </View>
         <View style={styles.tabs}>
           {TABS.map((tab) => (
-            <Pressable key={tab} onPress={() => tab !== 'LOBBY' && showStub(tab)}>
-              <Text style={[styles.tab, tab === 'LOBBY' && styles.tabActive]}>{tab}</Text>
+            <Pressable
+              key={tab}
+              style={[styles.tab, tab === 'LOBBY' && styles.tabActive]}
+              onPress={() => {
+                if (tab === 'LOBBY') return;
+                if (tab === 'COMPTE') onOpenAccount();
+                else showStub(tab);
+              }}
+            >
+              <Text style={[styles.tabLabel, tab === 'LOBBY' && styles.tabLabelActive]}>{tab}</Text>
             </Pressable>
           ))}
         </View>
       </View>
 
       <View style={styles.body}>
-        <View style={styles.statsPanel}>
-          <Text style={styles.statsTitle}>PLAYER STATS</Text>
-          <Text style={styles.statLine}>Victoires : {stats.wins}</Text>
-          <Text style={styles.statLine}>Parties jouees : {stats.matchesPlayed}</Text>
-          <Text style={styles.statLine}>Temps de jeu : {formatPlaytime(stats.playtimeMs)}</Text>
-          <Text style={styles.statLine}>
-            En ligne depuis{' '}
-            {sessionStartRef.current.getHours().toString().padStart(2, '0')}:
-            {sessionStartRef.current.getMinutes().toString().padStart(2, '0')}
-          </Text>
-        </View>
-
         <View style={styles.center}>
           <View style={styles.centerRow}>
             {renderPartySlot(teammates[0], onOpenSocial)}
@@ -240,8 +226,17 @@ const styles = StyleSheet.create({
     textShadowRadius: 6,
   },
   tabs: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
-  tab: { color: '#888', fontWeight: '700', fontSize: 12, letterSpacing: 0.5 },
-  tabActive: { color: '#fff', textDecorationLine: 'underline' },
+  tab: {
+    backgroundColor: 'rgba(20,23,27,0.7)',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  tabActive: { backgroundColor: 'rgba(21,101,192,0.85)', borderColor: 'rgba(255,255,255,0.2)' },
+  tabLabel: { color: '#999', fontWeight: '700', fontSize: 11, letterSpacing: 0.5 },
+  tabLabelActive: { color: '#fff' },
   socialButton: {
     backgroundColor: 'rgba(21,101,192,0.85)',
     borderRadius: 10,
@@ -252,19 +247,6 @@ const styles = StyleSheet.create({
   },
   socialButtonLabel: { color: '#fff', fontWeight: '700', fontSize: 12 },
   body: { flex: 1, position: 'relative' },
-  statsPanel: {
-    position: 'absolute',
-    top: 0,
-    left: 16,
-    width: 180,
-    backgroundColor: 'rgba(14,16,19,0.6)',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  statsTitle: { color: '#8a8f96', fontWeight: '700', marginBottom: 8, fontSize: 11, letterSpacing: 1 },
-  statLine: { color: '#d8dade', marginBottom: 4, fontSize: 13 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   characterStage: { width: 360, height: 480 },
   nameTag: {

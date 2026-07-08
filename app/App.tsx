@@ -216,12 +216,12 @@ export default function App() {
         <LobbyScreen
           name={playerName}
           user={user}
-          stats={stats}
           queueState={queueState}
           queuePosition={queuePosition}
           onQueue={startQueue}
           onCancelQueue={cancelQueue}
           onChangeName={() => setScreen(user ? 'auth' : 'name')}
+          onOpenAccount={() => setScreen('auth')}
           party={party}
           onOpenSocial={openSocial}
         />
