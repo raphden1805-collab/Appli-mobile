@@ -208,7 +208,7 @@ export function LobbyScreen({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
   bgImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  header: { padding: 16, backgroundColor: '#0b0d10' },
+  header: { padding: 16, backgroundColor: 'rgba(8,10,12,0.35)' },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   brand: {
     color: '#fff',
