@@ -34,7 +34,7 @@ function renderPartySlot(mate: { id: number; username: string; online: boolean }
       ) : (
         <Text style={styles.plusIcon}>+</Text>
       )}
-      <GroundDisc color={color} dashed={!mate} width={96} height={34} />
+      <GroundDisc color={color} dashed={!mate} width={55} height={20} />
       <Text style={styles.partySlotLabel} numberOfLines={1}>
         {mate ? mate.username : 'Inviter'}
       </Text>
@@ -240,20 +240,20 @@ const styles = StyleSheet.create({
   name: { color: '#fdd835', fontWeight: '700', fontSize: 16 },
   centerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 20 },
   characterColumn: { alignItems: 'center', gap: 8 },
-  partySlot: { alignItems: 'center', gap: 4, width: 110, marginBottom: 66 },
-  slotTop: { alignItems: 'center', justifyContent: 'center', height: 32 },
-  plusIcon: { color: 'rgba(255,255,255,0.55)', fontSize: 28, fontWeight: '300', height: 32, lineHeight: 32 },
+  partySlot: { alignItems: 'center', gap: 3, width: 66, marginBottom: 66 },
+  slotTop: { alignItems: 'center', justifyContent: 'center', height: 20 },
+  plusIcon: { color: 'rgba(255,255,255,0.55)', fontSize: 18, fontWeight: '300', height: 20, lineHeight: 20 },
   slotBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: 'rgba(20,23,27,0.85)',
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  slotInitials: { color: '#fff', fontWeight: '800', fontSize: 11 },
-  onlineDot: { position: 'absolute', bottom: -2, right: -2, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#0d0d0d' },
+  slotInitials: { color: '#fff', fontWeight: '800', fontSize: 8 },
+  onlineDot: { position: 'absolute', bottom: -1, right: -1, width: 7, height: 7, borderRadius: 4, borderWidth: 1.5, borderColor: '#0d0d0d' },
   partySlotLabel: { color: '#aaa', fontSize: 11, fontWeight: '600', marginTop: 2 },
   sidebar: { position: 'absolute', top: 74, right: 16, width: 100, gap: 10 },
   sidebarButton: {
